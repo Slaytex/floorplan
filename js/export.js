@@ -30,20 +30,38 @@ function exportDXF(){
     ].join('\n');
   }
 
+  // Door+sidelight swing arc (36" door). flip=true → sidelight on left/top, jamb at far end.
+  function doorSlArc(side,i,flip){
+    const r=sRect(side,i);
+    const {x,y,w,h}=r;
+    const radius=+(72/SC).toFixed(4); // 3 ft = 36"
+    let cx,cy,startAngle,endAngle;
+    if(side==='top'){
+      cx=dxfX(flip?x+92:x+4); cy=dxfY(y+h); startAngle=flip?90:0; endAngle=flip?180:90;
+    } else if(side==='bottom'){
+      cx=dxfX(flip?x+92:x+4); cy=dxfY(y); startAngle=flip?180:270; endAngle=flip?270:360;
+    } else if(side==='left'){
+      cx=dxfX(x+w); cy=dxfY(flip?y+92:y+4); startAngle=flip?0:90; endAngle=flip?90:180;
+    } else {
+      cx=dxfX(x); cy=dxfY(flip?y+92:y+4); startAngle=flip?90:0; endAngle=flip?180:90;
+    }
+    return['0','ARC','8','DOORS','10',cx,'20',cy,'30','0','40',radius,'50',startAngle,'51',endAngle].join('\n');
+  }
+
   // Door swing arc entity
   function doorArc(side,i){
     const r=sRect(side,i);
     const {x,y,w,h}=r;
-    const radius=+(( (side==='top'||side==='bottom')?w:h )*.88/SC).toFixed(4);
+    const radius=+(72/SC).toFixed(4); // 3ft = 36"
     let cx,cy,startAngle,endAngle;
     if(side==='top'){
-      cx=dxfX(x+w*.1); cy=dxfY(y+h); startAngle=0; endAngle=90;
+      cx=dxfX(x+4); cy=dxfY(y+h); startAngle=0; endAngle=90;
     } else if(side==='bottom'){
-      cx=dxfX(x+w*.1); cy=dxfY(y); startAngle=270; endAngle=360;
+      cx=dxfX(x+4); cy=dxfY(y); startAngle=270; endAngle=360;
     } else if(side==='left'){
-      cx=dxfX(x+w); cy=dxfY(y+h*.1); startAngle=90; endAngle=180;
+      cx=dxfX(x+w); cy=dxfY(y+4); startAngle=90; endAngle=180;
     } else { // right
-      cx=dxfX(x); cy=dxfY(y+h*.1); startAngle=0; endAngle=90;
+      cx=dxfX(x); cy=dxfY(y+4); startAngle=0; endAngle=90;
     }
     return[
       '0','ARC',
@@ -76,6 +94,8 @@ function exportDXF(){
       const layer=type==='wall'?'WALLS':type==='window'?'WINDOWS':'DOORS';
       entities.push(lwRect({x:r.x,y:r.y,width:r.w,height:r.h},layer));
       if(type==='door') entities.push(doorArc(side,i));
+      if(type==='door-sidelight') entities.push(doorSlArc(side,i,false));
+      if(type==='door-sidelight-flip') entities.push(doorSlArc(side,i,true));
     });
   });
 

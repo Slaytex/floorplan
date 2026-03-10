@@ -56,6 +56,10 @@ document.addEventListener('keydown',ev=>{
     ev.preventDefault();
     deleteSelected();
   }
+  if((ev.metaKey||ev.ctrlKey)&&ev.key==='z'){
+    ev.preventDefault();
+    undo();
+  }
 });
 document.addEventListener('keyup',ev=>{
   if(ev.code==='Space'){spaceDown=false;isPanning=false;ca.style.cursor='default';}
@@ -164,16 +168,17 @@ function onSvgMove(ev){
 function onSvgUp(ev){
   if(tool==='floor-line'&&drawLine){
     const dx=drawLine.x2-drawLine.x1,dy=drawLine.y2-drawLine.y1;
-    if(Math.abs(dx)>4||Math.abs(dy)>4) floorLines.push({id:lineId++,x1:drawLine.x1,y1:drawLine.y1,x2:drawLine.x2,y2:drawLine.y2,openings:[]});
+    if(Math.abs(dx)>4||Math.abs(dy)>4){saveHistory();floorLines.push({id:lineId++,x1:drawLine.x1,y1:drawLine.y1,x2:drawLine.x2,y2:drawLine.y2,openings:[]});}
     drawLine=null; snapIndicator=null; render();
   }
   if(dragWall){
+    saveHistory();
     const ln=floorLines.find(l=>l.id===dragWall.id);
     if(ln) clampOpenings(ln);
     dragWall=null; snapIndicator=null; render();
   }
-  if(dragOpening){dragOpening=null; render();}
-  if(dragFurn){dragFurn=null; render();}
+  if(dragOpening){saveHistory();dragOpening=null; render();}
+  if(dragFurn){saveHistory();dragFurn=null; render();}
 }
 
 // ── FURNITURE DRAG & DROP ──

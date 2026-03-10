@@ -24,6 +24,7 @@ function render(){
   renderFurniture();
   ['top','bottom','left','right'].forEach(drawSide);
   drawCorners();
+  drawDoorSwings();
   drawDims();
   bindSvgEvents();
 }
@@ -210,32 +211,123 @@ function drawSec(side,i,type,x,y,w,h){
     g.appendChild(e('line',{...da,stroke:'#4a8aaa','stroke-width':.6,'stroke-dasharray':'2,2'}));
     g.appendChild(e('rect',{x:x+2,y:y+2,width:w*.22,height:h-4,fill:'rgba(255,255,255,.28)',rx:1}));
   } else if(type==='door'){
-    g.appendChild(e('rect',{x,y,width:w,height:h,fill:'#e8d8b0',stroke:'#b09040','stroke-width':1.5}));
-    const r=horiz?w*.88:h*.88;
+    // jamb(4px) + door leaf(72px) + wall fill(20px) — swing arc in drawDoorSwings()
     if(horiz){
-      g.appendChild(e('line',{x1:x+w*.1,y1:y,x2:x+w*.1,y2:y+h,stroke:'#b09040','stroke-width':1.5}));
-      const sw=side==='top'?1:0;
-      const by=side==='top'?y+h:y;
-      g.appendChild(e('path',{d:`M ${x+w*.1} ${by} A ${r} ${r} 0 0 ${sw} ${x+w} ${by}`,
-        fill:'rgba(176,144,64,.1)',stroke:'#b09040','stroke-width':.9,'stroke-dasharray':'3,2'}));
+      // Wall fill (right, 20px)
+      g.appendChild(e('rect',{x:x+76,y,width:20,height:h,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
+      g.appendChild(e('rect',{x:x+76,y,width:20,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Door leaf
+      g.appendChild(e('rect',{x:x+4,y,width:72,height:h,fill:'#e8d8b0',stroke:'#b09040','stroke-width':1.5}));
+      g.appendChild(e('line',{x1:x+4,y1:y,x2:x+4,y2:y+h,stroke:'#b09040','stroke-width':1.5}));
+      // Jamb
+      g.appendChild(e('rect',{x,y,width:4,height:h,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
+      g.appendChild(e('rect',{x,y,width:4,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
     } else {
-      g.appendChild(e('line',{x1:x,y1:y+h*.1,x2:x+w,y2:y+h*.1,stroke:'#b09040','stroke-width':1.5}));
-      const sw=side==='left'?1:0;
-      const bx=side==='left'?x+w:x;
-      g.appendChild(e('path',{d:`M ${bx} ${y+h*.1} A ${r} ${r} 0 0 ${sw} ${bx} ${y+h}`,
-        fill:'rgba(176,144,64,.1)',stroke:'#b09040','stroke-width':.9,'stroke-dasharray':'3,2'}));
+      // Wall fill (bottom, 20px)
+      g.appendChild(e('rect',{x,y:y+76,width:w,height:20,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
+      g.appendChild(e('rect',{x,y:y+76,width:w,height:20,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Door leaf
+      g.appendChild(e('rect',{x,y:y+4,width:w,height:72,fill:'#e8d8b0',stroke:'#b09040','stroke-width':1.5}));
+      g.appendChild(e('line',{x1:x,y1:y+4,x2:x+w,y2:y+4,stroke:'#b09040','stroke-width':1.5}));
+      // Jamb
+      g.appendChild(e('rect',{x,y,width:w,height:4,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
+      g.appendChild(e('rect',{x,y,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
+    }
+  } else if(type==='door-sidelight'||type==='door-sidelight-flip'){
+    // Normal: jamb(4) + door(72) + mullion(4) + sidelight(16) = 96
+    // Flip:   sidelight(16) + mullion(4) + door(72) + jamb(4) = 96
+    const flip=type==='door-sidelight-flip';
+    if(horiz){
+      const jx=flip?x+80:x, dx=flip?x+20:x+4, mx=flip?x+16:x+76, slx=flip?x:x+80;
+      const jeLine=flip?x+92:x+4;
+      const slCx=flip?x+8:x+88;
+      // Jamb
+      g.appendChild(e('rect',{x:jx,y,width:4,height:h,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
+      g.appendChild(e('rect',{x:jx,y,width:4,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Door leaf
+      g.appendChild(e('rect',{x:dx,y,width:72,height:h,fill:'#e8d8b0',stroke:'#b09040','stroke-width':1.5}));
+      g.appendChild(e('line',{x1:jeLine,y1:y,x2:jeLine,y2:y+h,stroke:'#b09040','stroke-width':1.5}));
+      // Mullion
+      g.appendChild(e('rect',{x:mx,y,width:4,height:h,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
+      g.appendChild(e('rect',{x:mx,y,width:4,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Sidelight
+      g.appendChild(e('rect',{x:slx,y,width:16,height:h,fill:'#c2dce8',stroke:'#5b9ab5','stroke-width':1.5}));
+      g.appendChild(e('line',{x1:slCx,y1:y+1,x2:slCx,y2:y+h-1,stroke:'#4a8aaa','stroke-width':.9}));
+      // swing arc drawn separately in drawDoorSwings() after all sections
+    } else {
+      const jy=flip?y+80:y, dy=flip?y+20:y+4, my=flip?y+16:y+76, sly=flip?y:y+80;
+      const jeLine=flip?y+92:y+4;
+      const slCy=flip?y+8:y+88;
+      // Jamb
+      g.appendChild(e('rect',{x,y:jy,width:w,height:4,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
+      g.appendChild(e('rect',{x,y:jy,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Door leaf
+      g.appendChild(e('rect',{x,y:dy,width:w,height:72,fill:'#e8d8b0',stroke:'#b09040','stroke-width':1.5}));
+      g.appendChild(e('line',{x1:x,y1:jeLine,x2:x+w,y2:jeLine,stroke:'#b09040','stroke-width':1.5}));
+      // Mullion
+      g.appendChild(e('rect',{x,y:my,width:w,height:4,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
+      g.appendChild(e('rect',{x,y:my,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Sidelight
+      g.appendChild(e('rect',{x,y:sly,width:w,height:16,fill:'#c2dce8',stroke:'#5b9ab5','stroke-width':1.5}));
+      g.appendChild(e('line',{x1:x+1,y1:slCy,x2:x+w-1,y2:slCy,stroke:'#4a8aaa','stroke-width':.9}));
+      // swing arc drawn separately in drawDoorSwings() after all sections
     }
   }
   const hit=e('rect',{x,y,width:w,height:h,fill:'transparent',stroke:'none'});
   hit.style.cursor='pointer';
-  hit.addEventListener('mouseenter',()=>{if(tool==='wall'||tool==='window'||tool==='door'){hit.setAttribute('fill','rgba(196,133,58,.15)');hit.setAttribute('stroke','#c4853a');hit.setAttribute('stroke-width','1.5');}});
+  const isDoorSl=type==='door-sidelight'||type==='door-sidelight-flip';
+  hit.addEventListener('contextmenu',ev=>{
+    if(!isDoorSl)return;
+    ev.preventDefault(); ev.stopPropagation();
+    saveHistory();
+    secs[side][i]=type==='door-sidelight'?'door-sidelight-flip':'door-sidelight';
+    render();
+  });
+  hit.addEventListener('mouseenter',()=>{if(tool==='wall'||tool==='window'||tool==='door'||tool==='door-sidelight'){hit.setAttribute('fill','rgba(196,133,58,.15)');hit.setAttribute('stroke','#c4853a');hit.setAttribute('stroke-width','1.5');}});
   hit.addEventListener('mouseleave',()=>{hit.setAttribute('fill','transparent');hit.setAttribute('stroke','none');});
   hit.addEventListener('click',ev=>{
-    if(tool==='wall'||tool==='window'||tool==='door'){secs[side][i]=tool;render();}
+    if(tool==='wall'||tool==='window'||tool==='door'||tool==='door-sidelight'){saveHistory();secs[side][i]=tool;render();}
     ev.stopPropagation();
   });
   g.appendChild(hit);
   svg.appendChild(g);
+}
+// Door swing arcs drawn last so they sit on top of all wall section elements
+function drawDoorSwings(){
+  ['top','bottom','left','right'].forEach(side=>{
+    secs[side].forEach((type,i)=>{
+      if(type!=='door'&&type!=='door-sidelight'&&type!=='door-sidelight-flip')return;
+      const r=sRect(side,i);
+      const{x,y,w,h}=r;
+      const horiz=side==='top'||side==='bottom';
+      const flip=type==='door-sidelight-flip'; // door and door-sidelight both use flip=false layout
+      let x1c,y1c,x2c,y2c, x1o,y1o,x2o,y2o, d;
+      if(horiz){
+        const hy=side==='top'?y+h:y;
+        const aHx=flip?x+92:x+4;
+        const aTx=flip?x+20:x+76;
+        const aOy=side==='top'?y+h+72:y-72;
+        x1c=aHx;y1c=hy;x2c=aTx;y2c=hy;   // closed position line
+        x1o=aHx;y1o=hy;x2o=aHx;y2o=aOy;  // open position line
+        // Quarter-circle bezier: from door-tip-closed (aTx,hy) to door-tip-open (aHx,aOy)
+        const inDir=Math.sign(aOy-hy), sideDir=Math.sign(aTx-aHx);
+        d=`M ${aTx} ${hy} C ${aTx} ${hy+inDir*19} ${aHx+sideDir*64} ${hy+inDir*37} ${aHx+sideDir*51} ${hy+inDir*51} C ${aHx+sideDir*37} ${hy+inDir*64} ${aHx+sideDir*19} ${aOy} ${aHx} ${aOy}`;
+      } else {
+        const wx=side==='left'?x+w:x;
+        const aHy=flip?y+92:y+4;
+        const aTy=flip?y+20:y+76;
+        const aOx=side==='left'?x+w+72:x-72;
+        x1c=wx;y1c=aHy;x2c=wx;y2c=aTy;   // closed position line
+        x1o=wx;y1o=aHy;x2o=aOx;y2o=aHy;  // open position line
+        // Quarter-circle bezier: from door-tip-closed (wx,aTy) to door-tip-open (aOx,aHy)
+        const inDir=Math.sign(aOx-wx), sideDir=Math.sign(aTy-aHy);
+        d=`M ${wx} ${aTy} C ${wx+inDir*19} ${aTy} ${wx+inDir*37} ${aHy+sideDir*64} ${wx+inDir*51} ${aHy+sideDir*51} C ${wx+inDir*64} ${aHy+sideDir*37} ${aOx} ${aHy+sideDir*19} ${aOx} ${aHy}`;
+      }
+      svg.appendChild(e('line',{x1:x1c,y1:y1c,x2:x2c,y2:y2c,stroke:'#b09040','stroke-width':1.5}));
+      svg.appendChild(e('line',{x1:x1o,y1:y1o,x2:x2o,y2:y2o,stroke:'#b09040','stroke-width':1.5}));
+      svg.appendChild(e('path',{d,fill:'none',stroke:'#b09040','stroke-width':1,'stroke-dasharray':'4,3'}));
+    });
+  });
 }
 function drawCorners(){
   [[0,0],[W_PX+IPW,0],[0,W_PX+IPH],[W_PX+IPW,W_PX+IPH]].forEach(([x,y])=>{

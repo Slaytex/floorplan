@@ -20,13 +20,18 @@ const SNAP_DIST=14;
 
 // Openings (gaps in interior walls)
 let selOpening=null, dragOpening=null, openingId=0;
-const OPENING_W=36; // default 1.5ft (36px) opening width
+const OPENING_STD=72;    // 36" — standard door
+const OPENING_POCKET=64; // 32" — pocket door
 
 // Furniture
 let furniture=[], furnId=0, selFurn=null, dragFurn=null;
 
 // Zoom & pan
 let zoom=1, panX=0, panY=0, isPanning=false, panStart=null, spaceDown=false;
+
+// Undo history
+const history=[];
+const MAX_HISTORY=50;
 
 function defaults(){
   secs.top[1]=secs.top[2]=secs.top[5]=secs.top[6]='window';
