@@ -83,6 +83,7 @@ function resetPlan(){
 function resizePlan(direction){
   if(direction==='right-'&&SL<=2){setStatus('Minimum width reached (8ft)');return;}
   if(direction==='bottom-'&&SS<=2){setStatus('Minimum height reached (8ft)');return;}
+  if(direction==='bottom'&&IH>=32){setStatus('⚠ 32′ depth is reaching the structural limit of this system — consider adding a second structure');return;}
   saveHistory();
   if(direction==='right') {IW+=4;SL+=1;secs.top.push('wall');secs.bottom.push('wall');}
   if(direction==='right-'){IW-=4;SL-=1;secs.top.pop();secs.bottom.pop();}
