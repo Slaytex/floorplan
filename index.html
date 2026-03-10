@@ -3,71 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Floorplan Editor — 32′ × 20′</title>
+<title>Floorplan</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .lobby{flex:1;display:flex;align-items:flex-start;justify-content:center;
+    padding:48px 24px;overflow-y:auto}
+  .lobby-col{width:100%;max-width:460px}
+  .room-row{display:flex;align-items:center;gap:12px;padding:9px 10px;
+    border-radius:5px;border:1px solid transparent;transition:all .12s;
+    cursor:pointer;text-decoration:none;color:var(--muted)}
+  .room-row:hover{background:var(--panel2);border-color:var(--border);color:var(--text)}
+  .room-name{flex:1;font-size:12px;color:var(--text)}
+  .room-meta{font-size:8px;letter-spacing:.08em;color:var(--muted);white-space:nowrap}
+  .room-open{font-size:9px;letter-spacing:.1em;color:var(--accent)}
+  .empty-state{font-size:10px;color:var(--muted);padding:8px 4px}
+  .create-row{display:flex;gap:8px;margin-top:4px}
+  .create-input{flex:1;background:var(--panel);border:none;
+    border-bottom:1px solid var(--text);color:var(--text);
+    font-family:'DM Mono',monospace;font-size:11px;padding:5px 4px;outline:none}
+  .create-input:focus{border-bottom-color:var(--accent)}
+  .create-btn{padding:5px 14px;border:1px solid var(--border);border-radius:4px;
+    background:var(--panel2);color:var(--muted);font-family:'DM Mono',monospace;
+    font-size:10px;letter-spacing:.08em;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .create-btn:hover{border-color:var(--accent);color:var(--accent)}
+</style>
 </head>
 <body>
 
 <header>
-  <h1>Floorplan — <em>32′ × 20′</em></h1>
-  <span class="hscale">¼″ = 1′ &nbsp;·&nbsp; 4″ walls &nbsp;·&nbsp; 4′ sections</span>
-  <span class="hscale" id="zoom-display">100%</span>
-  <div class="hactions">
-    <button class="hbtn" onclick="exportSVG()">↓ SVG</button>
-    <button class="hbtn" onclick="exportPDF()">↓ PDF</button>
-    <button class="hbtn" onclick="exportDXF()">↓ DXF</button>
-    <button class="hbtn" onclick="resetPlan()">↺ Reset</button>
-  </div>
+  <h1>Floorplan</h1>
+  <span class="hscale">¼″ = 1′ &nbsp;·&nbsp; collaborative floor planning</span>
 </header>
 
-<div class="left-panel">
-  <div class="psec">Wall Sections</div>
-  <button class="tbtn active" data-tool="wall"   onclick="setTool('wall')"><div class="ti ti-wall"></div>Wall</button>
-  <button class="tbtn" data-tool="window" onclick="setTool('window')"><div class="ti ti-window"></div>Window</button>
-  <button class="tbtn" data-tool="door"   onclick="setTool('door')"><div class="ti ti-door"></div>Door</button>
-  <button class="tbtn" data-tool="door-sidelight" onclick="setTool('door-sidelight')"><div class="ti ti-door">⊞</div>Door+Sidelight</button>
-  <div class="psec">Drawing</div>
-  <button class="tbtn" data-tool="floor-line" onclick="setTool('floor-line')"><div class="ti ti-floor"></div>Floor Line</button>
-  <button class="tbtn" data-tool="select"     onclick="setTool('select')"><div class="ti ti-sel">↖</div>Select/Move</button>
-  <div class="psec">Edit</div>
-  <button class="tbtn" onclick="addOpening(OPENING_STD)"><div class="ti ti-floor">⊟</div>Opening 36″ door</button>
-  <button class="tbtn" onclick="addOpening(OPENING_POCKET)"><div class="ti ti-floor">⊟</div>Opening 32″ pocket</button>
-  <button class="tbtn" onclick="clearLines()"><div class="ti ti-era">✕✕</div>Clear Walls</button>
-  <div class="psec">Dimensions</div>
-  <div class="info-block">
-    Interior<br><span id="dim-interior">32′ × 20′</span><br>
-    Overall<br><span id="dim-overall">32′8″ × 20′8″</span><br>
-    Wall<br><span>4″ thick</span><br>
-    Sections<br><span id="dim-sections">4′ × 8+5=40</span>
-  </div>
-  <div class="psec">Current User Name</div>
-  <div class="info-block">
-    <input type="text" id="user-name-input" class="name-input" value="User 1" maxlength="24">
-    <button class="tbtn" style="margin-top:7px;width:100%" onclick="updateMyName()">Update</button>
+<div class="lobby">
+  <div class="lobby-col">
+    <div class="psec" style="border-top:none;margin-top:0;padding-top:0">Rooms</div>
+    <div id="room-list"></div>
+    <div class="psec">New Room</div>
+    <div class="create-row">
+      <input class="create-input" id="room-name" type="text" placeholder="room name" maxlength="48" autocomplete="off">
+      <button class="create-btn" onclick="createRoom()">Create →</button>
+    </div>
   </div>
 </div>
 
-<div class="canvas-area" id="canvas-area">
-  <div id="zoom-layer">
-    <svg id="fp-svg"></svg>
-  </div>
-</div>
+<div id="status">Loading…</div>
 
-<div class="right-panel">
-  <div class="psec" style="border-top:none;margin-top:0;padding-top:0">Furniture</div>
-  <div style="font-size:8px;color:var(--muted);margin-bottom:2px">Drag onto plan · RC=90° · ⌥RC=45°</div>
-  <div class="fgrid" id="furn-grid"></div>
-</div>
+<script>
+async function loadRooms(){
+  try {
+    const rooms = await fetch('/api/rooms').then(r => r.json());
+    const el = document.getElementById('room-list');
+    if(!rooms.length){
+      el.innerHTML = '<div class="empty-state">No rooms yet — create one below.</div>';
+      setStatus('Ready');
+      return;
+    }
+    el.innerHTML = rooms.map(rm => `
+      <a class="room-row" href="editor.html?room=${encodeURIComponent(rm.id)}">
+        <span class="room-name">${esc(rm.name)}</span>
+        <span class="room-meta">${fmt(rm.lastModified)}</span>
+        <span class="room-open">Open →</span>
+      </a>`).join('');
+    setStatus('Ready');
+  } catch(e) {
+    setStatus('Could not reach server');
+  }
+}
 
-<div id="status">Wall tool active</div>
-<script src="js/constants.js"></script>
-<script src="js/state.js"></script>
-<script src="js/render.js"></script>
-<script src="js/furniture.js"></script>
-<script src="js/events.js"></script>
-<script src="js/controls.js"></script>
-<script src="js/export.js"></script>
-<script src="js/sync.js"></script>
-<script src="js/main.js"></script>
+async function createRoom(){
+  const input = document.getElementById('room-name');
+  const name  = input.value.trim();
+  if(!name){ input.focus(); return; }
+  try {
+    const room = await fetch('/api/rooms', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    }).then(r => r.json());
+    window.location.href = `editor.html?room=${encodeURIComponent(room.id)}`;
+  } catch(e) {
+    setStatus('Could not create room');
+  }
+}
+
+function esc(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmt(iso){ return new Date(iso).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }
+
+let _st;
+function setStatus(msg){
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  clearTimeout(_st);
+  if(msg !== 'Ready') _st = setTimeout(() => el.textContent = '', 3000);
+}
+
+document.getElementById('room-name').addEventListener('keydown', e => { if(e.key==='Enter') createRoom(); });
+loadRooms();
+</script>
 </body>
 </html>
