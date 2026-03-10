@@ -1,6 +1,5 @@
 // ── RENDER ──
-function render(){
-  svg.innerHTML='';
+function buildDefs(){
   const defs=e('defs');
   const pat=e('pattern',{id:'g4',width:SEC,height:SEC,patternUnits:'userSpaceOnUse',x:W_PX,y:W_PX});
   pat.appendChild(e('rect',{width:SEC,height:SEC,fill:'none',stroke:'#c8c0b0','stroke-width':.4}));
@@ -15,7 +14,12 @@ function render(){
   const cp=e('clipPath',{id:'iclip'});
   cp.appendChild(e('rect',{x:W_PX,y:W_PX,width:IPW,height:IPH}));
   defs.appendChild(cp);
-  svg.appendChild(defs);
+  return defs;
+}
+
+function render(){
+  svg.innerHTML='';
+  svg.appendChild(buildDefs());
 
   svg.appendChild(e('rect',{x:W_PX,y:W_PX,width:IPW,height:IPH,fill:'#fdfaf4'}));
   svg.appendChild(e('rect',{x:W_PX,y:W_PX,width:IPW,height:IPH,fill:'url(#g4)'}));
@@ -26,6 +30,7 @@ function render(){
   drawCorners();
   drawDoorSwings();
   drawDims();
+  drawPortalFrame();
   drawResizeButtons();
   bindSvgEvents();
 }
@@ -57,13 +62,13 @@ function renderWallBody(g, ln, sel, showHandles){
   if(pos<wallLen) segs.push({start:pos,len:wallLen-pos});
 
   // Render wall segments
-  const sc=sel?'#c4853a':'#1a1410', sw=sel?1.5:.5;
+  const sc=sel?'#c4853a':COL_WALL_STROKE, sw=sel?1.5:.5;
   for(const seg of segs){
     const sr=horiz
       ?{x:r.x+seg.start,y:r.y,width:Math.max(0,seg.len),height:r.height}
       :{x:r.x,y:r.y+seg.start,width:r.width,height:Math.max(0,seg.len)};
     if(sr.width>0&&sr.height>0){
-      g.appendChild(e('rect',{...sr,fill:'#2a2420',stroke:sc,'stroke-width':sw}));
+      g.appendChild(e('rect',{...sr,fill:COL_WALL_FILL,stroke:sc,'stroke-width':sw}));
       g.appendChild(e('rect',{...sr,fill:'url(#wall-hatch)',stroke:'none'}));
     }
   }
@@ -145,9 +150,11 @@ function renderWallBody(g, ln, sel, showHandles){
   }
 }
 
-function renderLines(){
+// showHandles=true  → full render, appends to svg (used by render())
+// showHandles=false → partial refresh, inserts before furn-g (used by event handlers)
+function renderLines(showHandles = true){
   const g=e('g',{id:'lines-g','clip-path':'url(#iclip)'});
-  floorLines.forEach(ln=>renderWallBody(g,ln,ln.id===selLine,true));
+  floorLines.forEach(ln=>renderWallBody(g,ln,ln.id===selLine,showHandles));
 
   if(hoverEndpoint&&tool==='floor-line'&&!drawLine){
     const{x:hx,y:hy}=hoverEndpoint;
@@ -164,10 +171,17 @@ function renderLines(){
     const r=wallR(dl);
     g.appendChild(e('rect',{...r,fill:'#6a5a50',stroke:'#c4853a','stroke-width':1,'stroke-dasharray':'4,3',opacity:.75}));
   }
-  svg.appendChild(g);
+  if(!showHandles){
+    const fg=document.getElementById('furn-g');
+    if(fg) svg.insertBefore(g,fg); else svg.appendChild(g);
+  } else {
+    svg.appendChild(g);
+  }
 }
 
-function renderFurniture(){
+// showSelection=true  → full render, draws selection outline (used by render())
+// showSelection=false → partial refresh, no selection rect (used by event handlers)
+function renderFurniture(showSelection = true){
   const g=e('g',{id:'furn-g'});
   furniture.forEach(f=>{
     const def=FURN[f.type]; if(!def)return;
@@ -175,7 +189,7 @@ function renderFurniture(){
     const fg=e('g',{transform:`translate(${f.x},${f.y}) rotate(${f.rot||0},${pw/2},${ph/2})`,'data-fid':f.id});
     const sel=f.id===selFurn;
     def.draw(fg,SC,sel);
-    if(sel){
+    if(showSelection&&sel){
       fg.appendChild(e('rect',{x:-2,y:-2,width:pw+4,height:ph+4,fill:'none',stroke:'#c4853a','stroke-width':1.5,'stroke-dasharray':'4,2',rx:2}));
     }
     const hit=e('rect',{x:0,y:0,width:pw,height:ph,fill:'transparent',stroke:'none'});
@@ -196,84 +210,8 @@ function sRect(side,i){
   return                   {x:W_PX+IPW,  y:W_PX+i*SEC, w:W_PX,h:SEC};
 }
 function drawSide(side){secs[side].forEach((t,i)=>{const r=sRect(side,i);drawSec(side,i,t,r.x,r.y,r.w,r.h);});}
-function drawSec(side,i,type,x,y,w,h){
-  const g=e('g');
-  const horiz=side==='top'||side==='bottom';
-  if(type==='wall'){
-    g.appendChild(e('rect',{x,y,width:w,height:h,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
-    g.appendChild(e('rect',{x,y,width:w,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
-  } else if(type==='window'){
-    g.appendChild(e('rect',{x,y,width:w,height:h,fill:'#c2dce8',stroke:'#5b9ab5','stroke-width':1.5}));
-    for(let k=1;k<3;k++){
-      if(horiz) g.appendChild(e('line',{x1:x+w*k/3,y1:y+1,x2:x+w*k/3,y2:y+h-1,stroke:'#4a8aaa','stroke-width':.9}));
-      else      g.appendChild(e('line',{x1:x+1,y1:y+h*k/3,x2:x+w-1,y2:y+h*k/3,stroke:'#4a8aaa','stroke-width':.9}));
-    }
-    const da=horiz?{x1:x+1,y1:y+h/2,x2:x+w-1,y2:y+h/2}:{x1:x+w/2,y1:y+1,x2:x+w/2,y2:y+h-1};
-    g.appendChild(e('line',{...da,stroke:'#4a8aaa','stroke-width':.6,'stroke-dasharray':'2,2'}));
-    g.appendChild(e('rect',{x:x+2,y:y+2,width:w*.22,height:h-4,fill:'rgba(255,255,255,.28)',rx:1}));
-  } else if(type==='door'){
-    // jamb(4px) + door leaf(72px) + wall fill(20px) — swing arc in drawDoorSwings()
-    if(horiz){
-      // Wall fill (right, 20px)
-      g.appendChild(e('rect',{x:x+76,y,width:20,height:h,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
-      g.appendChild(e('rect',{x:x+76,y,width:20,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
-      // Door leaf
-      g.appendChild(e('rect',{x:x+4,y,width:72,height:h,fill:'#e8d8b0',stroke:'#b09040','stroke-width':1.5}));
-      g.appendChild(e('line',{x1:x+4,y1:y,x2:x+4,y2:y+h,stroke:'#b09040','stroke-width':1.5}));
-      // Jamb
-      g.appendChild(e('rect',{x,y,width:4,height:h,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
-      g.appendChild(e('rect',{x,y,width:4,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
-    } else {
-      // Wall fill (bottom, 20px)
-      g.appendChild(e('rect',{x,y:y+76,width:w,height:20,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
-      g.appendChild(e('rect',{x,y:y+76,width:w,height:20,fill:'url(#wall-hatch)',stroke:'none'}));
-      // Door leaf
-      g.appendChild(e('rect',{x,y:y+4,width:w,height:72,fill:'#e8d8b0',stroke:'#b09040','stroke-width':1.5}));
-      g.appendChild(e('line',{x1:x,y1:y+4,x2:x+w,y2:y+4,stroke:'#b09040','stroke-width':1.5}));
-      // Jamb
-      g.appendChild(e('rect',{x,y,width:w,height:4,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
-      g.appendChild(e('rect',{x,y,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
-    }
-  } else if(type==='door-sidelight'||type==='door-sidelight-flip'){
-    // Normal: jamb(4) + door(72) + mullion(4) + sidelight(16) = 96
-    // Flip:   sidelight(16) + mullion(4) + door(72) + jamb(4) = 96
-    const flip=type==='door-sidelight-flip';
-    if(horiz){
-      const jx=flip?x+80:x, dx=flip?x+20:x+4, mx=flip?x+16:x+76, slx=flip?x:x+80;
-      const jeLine=flip?x+92:x+4;
-      const slCx=flip?x+8:x+88;
-      // Jamb
-      g.appendChild(e('rect',{x:jx,y,width:4,height:h,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
-      g.appendChild(e('rect',{x:jx,y,width:4,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
-      // Door leaf
-      g.appendChild(e('rect',{x:dx,y,width:72,height:h,fill:'#e8d8b0',stroke:'#b09040','stroke-width':1.5}));
-      g.appendChild(e('line',{x1:jeLine,y1:y,x2:jeLine,y2:y+h,stroke:'#b09040','stroke-width':1.5}));
-      // Mullion
-      g.appendChild(e('rect',{x:mx,y,width:4,height:h,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
-      g.appendChild(e('rect',{x:mx,y,width:4,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
-      // Sidelight
-      g.appendChild(e('rect',{x:slx,y,width:16,height:h,fill:'#c2dce8',stroke:'#5b9ab5','stroke-width':1.5}));
-      g.appendChild(e('line',{x1:slCx,y1:y+1,x2:slCx,y2:y+h-1,stroke:'#4a8aaa','stroke-width':.9}));
-      // swing arc drawn separately in drawDoorSwings() after all sections
-    } else {
-      const jy=flip?y+80:y, dy=flip?y+20:y+4, my=flip?y+16:y+76, sly=flip?y:y+80;
-      const jeLine=flip?y+92:y+4;
-      const slCy=flip?y+8:y+88;
-      // Jamb
-      g.appendChild(e('rect',{x,y:jy,width:w,height:4,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
-      g.appendChild(e('rect',{x,y:jy,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
-      // Door leaf
-      g.appendChild(e('rect',{x,y:dy,width:w,height:72,fill:'#e8d8b0',stroke:'#b09040','stroke-width':1.5}));
-      g.appendChild(e('line',{x1:x,y1:jeLine,x2:x+w,y2:jeLine,stroke:'#b09040','stroke-width':1.5}));
-      // Mullion
-      g.appendChild(e('rect',{x,y:my,width:w,height:4,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
-      g.appendChild(e('rect',{x,y:my,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
-      // Sidelight
-      g.appendChild(e('rect',{x,y:sly,width:w,height:16,fill:'#c2dce8',stroke:'#5b9ab5','stroke-width':1.5}));
-      g.appendChild(e('line',{x1:x+1,y1:slCy,x2:x+w-1,y2:slCy,stroke:'#4a8aaa','stroke-width':.9}));
-      // swing arc drawn separately in drawDoorSwings() after all sections
-    }
-  }
+
+function makeSectionHit(x,y,w,h,side,i,type){
   const hit=e('rect',{x,y,width:w,height:h,fill:'transparent',stroke:'none'});
   hit.style.cursor='pointer';
   const isDoorSl=type==='door-sidelight'||type==='door-sidelight-flip';
@@ -290,7 +228,88 @@ function drawSec(side,i,type,x,y,w,h){
     if(tool==='wall'||tool==='window'||tool==='door'||tool==='door-sidelight'){saveHistory();secs[side][i]=tool;render();}
     ev.stopPropagation();
   });
-  g.appendChild(hit);
+  return hit;
+}
+
+function drawSec(side,i,type,x,y,w,h){
+  const g=e('g');
+  const horiz=side==='top'||side==='bottom';
+  if(type==='wall'){
+    g.appendChild(e('rect',{x,y,width:w,height:h,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
+    g.appendChild(e('rect',{x,y,width:w,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
+  } else if(type==='window'){
+    g.appendChild(e('rect',{x,y,width:w,height:h,fill:'#c2dce8',stroke:'#5b9ab5','stroke-width':1.5}));
+    for(let k=1;k<3;k++){
+      if(horiz) g.appendChild(e('line',{x1:x+w*k/3,y1:y+1,x2:x+w*k/3,y2:y+h-1,stroke:'#4a8aaa','stroke-width':.9}));
+      else      g.appendChild(e('line',{x1:x+1,y1:y+h*k/3,x2:x+w-1,y2:y+h*k/3,stroke:'#4a8aaa','stroke-width':.9}));
+    }
+    const da=horiz?{x1:x+1,y1:y+h/2,x2:x+w-1,y2:y+h/2}:{x1:x+w/2,y1:y+1,x2:x+w/2,y2:y+h-1};
+    g.appendChild(e('line',{...da,stroke:'#4a8aaa','stroke-width':.6,'stroke-dasharray':'2,2'}));
+    g.appendChild(e('rect',{x:x+2,y:y+2,width:w*.22,height:h-4,fill:'rgba(255,255,255,.28)',rx:1}));
+  } else if(type==='door'){
+    // jamb(4px) + door leaf(72px) + wall fill(20px) — swing arc in drawDoorSwings()
+    if(horiz){
+      // Wall fill (right, 20px)
+      g.appendChild(e('rect',{x:x+76,y,width:20,height:h,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
+      g.appendChild(e('rect',{x:x+76,y,width:20,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Door leaf
+      g.appendChild(e('rect',{x:x+4,y,width:72,height:h,fill:COL_DOOR_FILL,stroke:COL_DOOR_STROKE,'stroke-width':1.5}));
+      g.appendChild(e('line',{x1:x+4,y1:y,x2:x+4,y2:y+h,stroke:COL_DOOR_STROKE,'stroke-width':1.5}));
+      // Jamb
+      g.appendChild(e('rect',{x,y,width:4,height:h,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
+      g.appendChild(e('rect',{x,y,width:4,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
+    } else {
+      // Wall fill (bottom, 20px)
+      g.appendChild(e('rect',{x,y:y+76,width:w,height:20,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
+      g.appendChild(e('rect',{x,y:y+76,width:w,height:20,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Door leaf
+      g.appendChild(e('rect',{x,y:y+4,width:w,height:72,fill:COL_DOOR_FILL,stroke:COL_DOOR_STROKE,'stroke-width':1.5}));
+      g.appendChild(e('line',{x1:x,y1:y+4,x2:x+w,y2:y+4,stroke:COL_DOOR_STROKE,'stroke-width':1.5}));
+      // Jamb
+      g.appendChild(e('rect',{x,y,width:w,height:4,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
+      g.appendChild(e('rect',{x,y,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
+    }
+  } else if(type==='door-sidelight'||type==='door-sidelight-flip'){
+    // Normal: jamb(4) + door(72) + mullion(4) + sidelight(16) = 96
+    // Flip:   sidelight(16) + mullion(4) + door(72) + jamb(4) = 96
+    const flip=type==='door-sidelight-flip';
+    if(horiz){
+      const jx=flip?x+80:x, dx=flip?x+20:x+4, mx=flip?x+16:x+76, slx=flip?x:x+80;
+      const jeLine=flip?x+92:x+4;
+      const slCx=flip?x+8:x+88;
+      // Jamb
+      g.appendChild(e('rect',{x:jx,y,width:4,height:h,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
+      g.appendChild(e('rect',{x:jx,y,width:4,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Door leaf
+      g.appendChild(e('rect',{x:dx,y,width:72,height:h,fill:COL_DOOR_FILL,stroke:COL_DOOR_STROKE,'stroke-width':1.5}));
+      g.appendChild(e('line',{x1:jeLine,y1:y,x2:jeLine,y2:y+h,stroke:COL_DOOR_STROKE,'stroke-width':1.5}));
+      // Mullion
+      g.appendChild(e('rect',{x:mx,y,width:4,height:h,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
+      g.appendChild(e('rect',{x:mx,y,width:4,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Sidelight
+      g.appendChild(e('rect',{x:slx,y,width:16,height:h,fill:'#c2dce8',stroke:'#5b9ab5','stroke-width':1.5}));
+      g.appendChild(e('line',{x1:slCx,y1:y+1,x2:slCx,y2:y+h-1,stroke:'#4a8aaa','stroke-width':.9}));
+      // swing arc drawn separately in drawDoorSwings() after all sections
+    } else {
+      const jy=flip?y+80:y, dy=flip?y+20:y+4, my=flip?y+16:y+76, sly=flip?y:y+80;
+      const jeLine=flip?y+92:y+4;
+      const slCy=flip?y+8:y+88;
+      // Jamb
+      g.appendChild(e('rect',{x,y:jy,width:w,height:4,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
+      g.appendChild(e('rect',{x,y:jy,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Door leaf
+      g.appendChild(e('rect',{x,y:dy,width:w,height:72,fill:COL_DOOR_FILL,stroke:COL_DOOR_STROKE,'stroke-width':1.5}));
+      g.appendChild(e('line',{x1:x,y1:jeLine,x2:x+w,y2:jeLine,stroke:COL_DOOR_STROKE,'stroke-width':1.5}));
+      // Mullion
+      g.appendChild(e('rect',{x,y:my,width:w,height:4,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
+      g.appendChild(e('rect',{x,y:my,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
+      // Sidelight
+      g.appendChild(e('rect',{x,y:sly,width:w,height:16,fill:'#c2dce8',stroke:'#5b9ab5','stroke-width':1.5}));
+      g.appendChild(e('line',{x1:x+1,y1:slCy,x2:x+w-1,y2:slCy,stroke:'#4a8aaa','stroke-width':.9}));
+      // swing arc drawn separately in drawDoorSwings() after all sections
+    }
+  }
+  g.appendChild(makeSectionHit(x,y,w,h,side,i,type));
   svg.appendChild(g);
 }
 // Door swing arcs drawn last so they sit on top of all wall section elements
@@ -324,15 +343,15 @@ function drawDoorSwings(){
         const inDir=Math.sign(aOx-wx), sideDir=Math.sign(aTy-aHy);
         d=`M ${wx} ${aTy} C ${wx+inDir*19} ${aTy} ${wx+inDir*37} ${aHy+sideDir*64} ${wx+inDir*51} ${aHy+sideDir*51} C ${wx+inDir*64} ${aHy+sideDir*37} ${aOx} ${aHy+sideDir*19} ${aOx} ${aHy}`;
       }
-      svg.appendChild(e('line',{x1:x1c,y1:y1c,x2:x2c,y2:y2c,stroke:'#b09040','stroke-width':1.5}));
-      svg.appendChild(e('line',{x1:x1o,y1:y1o,x2:x2o,y2:y2o,stroke:'#b09040','stroke-width':1.5}));
-      svg.appendChild(e('path',{d,fill:'none',stroke:'#b09040','stroke-width':1,'stroke-dasharray':'4,3'}));
+      svg.appendChild(e('line',{x1:x1c,y1:y1c,x2:x2c,y2:y2c,stroke:COL_DOOR_STROKE,'stroke-width':1.5}));
+      svg.appendChild(e('line',{x1:x1o,y1:y1o,x2:x2o,y2:y2o,stroke:COL_DOOR_STROKE,'stroke-width':1.5}));
+      svg.appendChild(e('path',{d,fill:'none',stroke:COL_DOOR_STROKE,'stroke-width':1,'stroke-dasharray':'4,3'}));
     });
   });
 }
 function drawCorners(){
   [[0,0],[W_PX+IPW,0],[0,W_PX+IPH],[W_PX+IPW,W_PX+IPH]].forEach(([x,y])=>{
-    svg.appendChild(e('rect',{x,y,width:W_PX,height:W_PX,fill:'#5a4e46',stroke:'#3a2e28','stroke-width':.5}));
+    svg.appendChild(e('rect',{x,y,width:W_PX,height:W_PX,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
     svg.appendChild(e('rect',{x,y,width:W_PX,height:W_PX,fill:'url(#wall-hatch)',stroke:'none'}));
   });
 }
@@ -365,40 +384,63 @@ function drawResizeButtons(){
   svg.appendChild(makeBtn(TW/2-14, TH+26, '+', 'bottom',  '#7a9e7e'));
   svg.appendChild(makeBtn(TW/2+14, TH+26, '−', 'bottom-', '#9e7a7a'));
 }
-function renderLinesOnly(){
-  const g=e('g',{id:'lines-g','clip-path':'url(#iclip)'});
-  floorLines.forEach(ln=>renderWallBody(g,ln,ln.id===selLine,false));
-  if(hoverEndpoint&&tool==='floor-line'&&!drawLine){
-    const{x:hx,y:hy}=hoverEndpoint;
-    g.appendChild(e('circle',{cx:hx,cy:hy,r:9,fill:'rgba(196,133,58,.15)',stroke:'#c4853a','stroke-width':1.2}));
-    g.appendChild(e('line',{x1:hx-5,y1:hy,x2:hx+5,y2:hy,stroke:'#c4853a','stroke-width':1.8}));
-    g.appendChild(e('line',{x1:hx,y1:hy-5,x2:hx,y2:hy+5,stroke:'#c4853a','stroke-width':1.8}));
+
+function drawPortalFrame(){
+  // Axial portal frame ("compass") — feet are 3" wide (X) × 8" tall (Y), 56" apart edge-to-edge
+  // Frame count based on IW only (depth does not affect structure):
+  //   N = max(1, ceil(IW / 20) - 1)  — max bay = 20ft fixed
+  //   N=1 → single center frame
+  //   N≥2 → outer bay = (IW - (N-1)×20) / 2 from each wall, frames every 20ft
+  const FOOT_W = Math.round(3/12 * SC);   // 3"  = 6px
+  const FOOT_H = Math.round(8/12 * SC);   // 8"  = 16px
+  const SEP    = Math.round(56/12 * SC);  // 56" edge-to-edge = 112px
+  const CTC    = SEP + FOOT_H;            // center-to-center = 128px
+  const cy     = W_PX + IPH / 2;
+  const f1y    = cy - CTC / 2 - FOOT_H / 2;
+  const f2y    = cy + CTC / 2 - FOOT_H / 2;
+  const CH     = 5;
+
+  // Compute frame column positions in SVG px along the X axis.
+  // Max structural bay = 20ft (fixed constant — depth does not affect frame count).
+  const MAX_BAY = 20;
+  const N = Math.max(1, Math.ceil(IW / MAX_BAY) - 1);
+  const frameXs = [];
+  if(N === 1){
+    frameXs.push(W_PX + IPW / 2);
+  } else {
+    const outerFt = (IW - (N - 1) * MAX_BAY) / 2; // ft from interior left wall
+    for(let i = 0; i < N; i++){
+      frameXs.push(W_PX + (outerFt + i * MAX_BAY) * SC);
+    }
   }
-  if(snapIndicator){
-    g.appendChild(e('circle',{cx:snapIndicator.x,cy:snapIndicator.y,r:8,fill:'none',stroke:'#c4853a','stroke-width':1.5,opacity:.9}));
-    g.appendChild(e('circle',{cx:snapIndicator.x,cy:snapIndicator.y,r:2,fill:'#c4853a'}));
+
+  const g = e('g',{id:'portal-frame'});
+
+  for(const cx of frameXs){
+    const fx = cx - FOOT_W / 2;
+
+    // Dashed axis line between the feet
+    g.appendChild(e('line',{x1:cx,y1:f1y+FOOT_H,x2:cx,y2:f2y,
+      stroke:'#9a8a7a','stroke-width':.6,'stroke-dasharray':'3,3',opacity:.7}));
+
+    // Feet — dark fill + wall hatch
+    for(const fy of [f1y, f2y]){
+      g.appendChild(e('rect',{x:fx,y:fy,width:FOOT_W,height:FOOT_H,
+        fill:COL_WALL_FILL,stroke:COL_WALL_STROKE,'stroke-width':.5}));
+      g.appendChild(e('rect',{x:fx,y:fy,width:FOOT_W,height:FOOT_H,
+        fill:'url(#wall-hatch)',stroke:'none'}));
+    }
+
+    // Crosshair at plan center for this frame column
+    g.appendChild(e('line',{x1:cx-CH,y1:cy,x2:cx+CH,y2:cy,stroke:'#9a8a7a','stroke-width':.6,opacity:.7}));
+    g.appendChild(e('line',{x1:cx,y1:cy-CH,x2:cx,y2:cy+CH,stroke:'#9a8a7a','stroke-width':.6,opacity:.7}));
   }
-  if(drawLine){
-    const dl={x1:drawLine.x1,y1:drawLine.y1,x2:drawLine.x2,y2:drawLine.y2};
-    const r=wallR(dl);
-    g.appendChild(e('rect',{...r,fill:'#6a5a50',stroke:'#c4853a','stroke-width':1,'stroke-dasharray':'4,3',opacity:.75}));
-  }
-  const fg=document.getElementById('furn-g');
-  if(fg)svg.insertBefore(g,fg); else svg.appendChild(g);
-}
-function renderFurnitureOnly(){
-  const g=e('g',{id:'furn-g'});
-  furniture.forEach(f=>{
-    const def=FURN[f.type];if(!def)return;
-    const pw=def.w*SC,ph=def.h*SC;
-    const fg=e('g',{transform:`translate(${f.x},${f.y}) rotate(${f.rot||0},${pw/2},${ph/2})`,'data-fid':f.id});
-    def.draw(fg,SC,f.id===selFurn);
-    const hit=e('rect',{x:0,y:0,width:pw,height:ph,fill:'transparent',stroke:'none'});
-    hit.style.cursor='move';
-    hit.addEventListener('mousedown',ev=>onFurnDown(ev,f.id));
-    hit.addEventListener('click',ev=>ev.stopPropagation());
-    fg.appendChild(hit);
-    g.appendChild(fg);
-  });
+
+  // Label above the first frame
+  const lbl=e('text',{x:frameXs[0]+5,y:f1y-3,fill:'#9a8a7a',
+    'font-family':'DM Mono,monospace','font-size':'6','letter-spacing':'.08em'});
+  lbl.textContent='compass frame';
+  g.appendChild(lbl);
+
   svg.appendChild(g);
 }
