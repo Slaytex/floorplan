@@ -62,7 +62,7 @@ function addOpening(width=OPENING_STD){
   saveHistory();
   if(!ln.openings) ln.openings=[];
   const offset=(wallLen-width)/2; // center it
-  ln.openings.push({id:openingId++,offset,width});
+  ln.openings.push({id:crypto.randomUUID(),offset,width});
   selOpening={lineId:ln.id,openingId:ln.openings[ln.openings.length-1].id};
   render();
   setStatus(`${Math.round(width/SC*12)}″ opening added — drag to reposition`);

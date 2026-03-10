@@ -1,0 +1,13 @@
+{
+  "name": "floorplan",
+  "version": "1.0.0",
+  "description": "Browser-based 2D floorplan editor with real-time collaboration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

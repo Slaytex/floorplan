@@ -50,7 +50,7 @@ ca.addEventListener('wheel',ev=>{
 document.addEventListener('keydown',ev=>{
   if(ev.target.matches('input,textarea'))return;
   if(ev.code==='Space'&&!ev.repeat){
-    spaceDown=true; ca.style.cursor='grab'; ev.preventDefault();
+    spaceDown=true; ca.style.cursor='grab'; document.body.style.cursor='grab'; ev.preventDefault();
   }
   if(ev.key==='Delete'||ev.key==='Backspace'){
     ev.preventDefault();
@@ -62,15 +62,15 @@ document.addEventListener('keydown',ev=>{
   }
 });
 document.addEventListener('keyup',ev=>{
-  if(ev.code==='Space'){spaceDown=false;isPanning=false;ca.style.cursor='default';}
+  if(ev.code==='Space'){spaceDown=false;isPanning=false;ca.style.cursor='';document.body.style.cursor='';}
 });
 ca.addEventListener('mousedown',ev=>{
-  if(spaceDown){isPanning=true;panStart={x:ev.clientX-panX,y:ev.clientY-panY};ca.style.cursor='grabbing';}
+  if(spaceDown){isPanning=true;panStart={x:ev.clientX-panX,y:ev.clientY-panY};ca.style.cursor='grabbing';document.body.style.cursor='grabbing';}
 });
 ca.addEventListener('mousemove',ev=>{
   if(isPanning){panX=ev.clientX-panStart.x;panY=ev.clientY-panStart.y;applyTransform();}
 });
-ca.addEventListener('mouseup',()=>{isPanning=false;if(spaceDown)ca.style.cursor='grab';});
+ca.addEventListener('mouseup',()=>{isPanning=false;if(spaceDown){ca.style.cursor='grab';document.body.style.cursor='grab';}});
 
 // ── SVG DRAWING EVENTS ──
 function bindSvgEvents(){
@@ -168,7 +168,7 @@ function onSvgMove(ev){
 function onSvgUp(ev){
   if(tool==='floor-line'&&drawLine){
     const dx=drawLine.x2-drawLine.x1,dy=drawLine.y2-drawLine.y1;
-    if(Math.abs(dx)>4||Math.abs(dy)>4){saveHistory();floorLines.push({id:lineId++,x1:drawLine.x1,y1:drawLine.y1,x2:drawLine.x2,y2:drawLine.y2,openings:[]});}
+    if(Math.abs(dx)>4||Math.abs(dy)>4){saveHistory();floorLines.push({id:crypto.randomUUID(),x1:drawLine.x1,y1:drawLine.y1,x2:drawLine.x2,y2:drawLine.y2,openings:[]});}
     drawLine=null; snapIndicator=null; render();
   }
   if(dragWall){
@@ -214,6 +214,6 @@ ca.addEventListener('drop',ev=>{
   const def=FURN[type];
   const x=ev.clientX-r.left-def.w*SC/2;
   const y=ev.clientY-r.top-def.h*SC/2;
-  furniture.push({id:furnId++,type,x,y,rot:0});
+  furniture.push({id:crypto.randomUUID(),type,x,y,rot:0});
   render();
 });
