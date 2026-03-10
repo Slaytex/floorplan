@@ -100,7 +100,7 @@ function onSvgMove(ev){
     const pt=clampI(svgPt(ev));
     const sx=snapI(pt.x),sy=snapI(pt.y);
     const he=findSnapEndpoint(sx,sy);
-    if(he!==hoverEndpoint){hoverEndpoint=he;if(!drawLine){const old=document.getElementById('lines-g');if(old)old.remove();renderLinesOnly();}}
+    if(he!==hoverEndpoint){hoverEndpoint=he;if(!drawLine){const old=document.getElementById('lines-g');if(old)old.remove();renderLines(false);}}
     if(drawLine){
       const dx=sx-drawLine.x1,dy=sy-drawLine.y1;
       let ex,ey;
@@ -112,7 +112,7 @@ function onSvgMove(ev){
       drawLine.x2=ex; drawLine.y2=ey;
       const old=document.getElementById('lines-g');
       if(old)old.remove();
-      renderLinesOnly();
+      renderLines(false);
     }
   }
   if(dragWall){
@@ -140,7 +140,7 @@ function onSvgMove(ev){
     }
     const old=document.getElementById('lines-g');
     if(old)old.remove();
-    renderLinesOnly();
+    renderLines(false);
   }
   if(dragOpening){
     const ln=floorLines.find(l=>l.id===dragOpening.lineId);
@@ -154,7 +154,7 @@ function onSvgMove(ev){
     }
     const old=document.getElementById('lines-g');
     if(old)old.remove();
-    renderLinesOnly();
+    renderLines(false);
   }
   if(dragFurn){
     const pt=svgPt(ev);
@@ -162,7 +162,7 @@ function onSvgMove(ev){
     if(f){f.x=pt.x-dragFurn.ox;f.y=pt.y-dragFurn.oy;}
     const old=document.getElementById('furn-g');
     if(old)old.remove();
-    renderFurnitureOnly();
+    renderFurniture(false);
   }
 }
 function onSvgUp(ev){
