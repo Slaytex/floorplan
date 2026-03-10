@@ -42,6 +42,15 @@ wss.on('connection', (ws, req) => {
         room.state = msg.state;                          // store latest
         broadcast(room, {type:'state', state:msg.state}, ws); // relay to others
       }
+      if(msg.type === 'join'){
+        ws._clientId = msg.id; // remember this client's ID for leave broadcast
+      }
+      if(msg.type === 'cursor'){
+        broadcast(room, msg, ws); // relay cursor position to others
+      }
+      if(msg.type === 'cursor-leave'){
+        broadcast(room, msg, ws);
+      }
     } catch(e) {
       console.error('Bad message:', e.message);
     }
@@ -51,6 +60,10 @@ wss.on('connection', (ws, req) => {
     room.clients.delete(ws);
     console.log(`[${roomId}] disconnected (${room.clients.size} users)`);
     broadcastUserCount(room);
+    // Tell others to remove this user's cursor
+    if(ws._clientId){
+      broadcast(room, {type:'cursor-leave', id:ws._clientId}, null);
+    }
     // Optional: clean up empty rooms after a delay
     if(room.clients.size === 0){
       setTimeout(() => {
