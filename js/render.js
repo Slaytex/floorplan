@@ -26,6 +26,7 @@ function render(){
   drawCorners();
   drawDoorSwings();
   drawDims();
+  drawResizeButtons();
   bindSvgEvents();
 }
 
@@ -339,12 +340,31 @@ function drawDims(){
   const ds={'font-family':'DM Mono,monospace','font-size':'8','text-anchor':'middle',fill:'#9a8a7a'};
   svg.appendChild(e('line',{x1:W_PX,y1:-14,x2:W_PX+IPW,y2:-14,stroke:'#9a8a7a','stroke-width':.6}));
   [W_PX,W_PX+IPW].forEach(x=>{svg.appendChild(e('line',{x1:x,y1:-18,x2:x,y2:-10,stroke:'#9a8a7a','stroke-width':.6}));});
-  const t1=e('text',{x:W_PX+IPW/2,y:-19,...ds});t1.textContent="32′-0″ interior";svg.appendChild(t1);
+  const t1=e('text',{x:W_PX+IPW/2,y:-19,...ds});t1.textContent=`${IW}′-0″ interior`;svg.appendChild(t1);
   svg.appendChild(e('line',{x1:-16,y1:W_PX,x2:-16,y2:W_PX+IPH,stroke:'#9a8a7a','stroke-width':.6}));
   [W_PX,W_PX+IPH].forEach(y=>{svg.appendChild(e('line',{x1:-20,y1:y,x2:-12,y2:y,stroke:'#9a8a7a','stroke-width':.6}));});
-  const t2=e('text',{x:-28,y:W_PX+IPH/2,...ds,transform:`rotate(-90,-28,${W_PX+IPH/2})`});t2.textContent="20′-0″ interior";svg.appendChild(t2);
+  const t2=e('text',{x:-28,y:W_PX+IPH/2,...ds,transform:`rotate(-90,-28,${W_PX+IPH/2})`});t2.textContent=`${IH}′-0″ interior`;svg.appendChild(t2);
 }
 
+function drawResizeButtons(){
+  function makeBtn(cx,cy,label,dir,fill){
+    const g=e('g');g.style.cursor='pointer';
+    const c=e('circle',{cx,cy,r:12,fill,stroke:'none'});
+    const t=e('text',{x:cx,y:cy,'text-anchor':'middle','dominant-baseline':'central',
+      fill:'#fff','font-size':'16','font-family':'DM Mono,monospace','font-weight':'bold'});
+    t.textContent=label;
+    g.appendChild(c);g.appendChild(t);
+    const hov=label==='+'?'#5a7e5e':'#7e4a4a';
+    g.addEventListener('mouseenter',()=>c.setAttribute('fill',hov));
+    g.addEventListener('mouseleave',()=>c.setAttribute('fill',fill));
+    g.addEventListener('click',ev=>{ev.stopPropagation();resizePlan(dir);});
+    return g;
+  }
+  svg.appendChild(makeBtn(TW+26, TH/2-14, '+', 'right',   '#7a9e7e'));
+  svg.appendChild(makeBtn(TW+26, TH/2+14, '−', 'right-',  '#9e7a7a'));
+  svg.appendChild(makeBtn(TW/2-14, TH+26, '+', 'bottom',  '#7a9e7e'));
+  svg.appendChild(makeBtn(TW/2+14, TH+26, '−', 'bottom-', '#9e7a7a'));
+}
 function renderLinesOnly(){
   const g=e('g',{id:'lines-g','clip-path':'url(#iclip)'});
   floorLines.forEach(ln=>renderWallBody(g,ln,ln.id===selLine,false));

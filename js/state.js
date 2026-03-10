@@ -1,8 +1,11 @@
 // DOM refs (safe — scripts load at end of <body>)
 const svg=document.getElementById('fp-svg');
 const ca=document.getElementById('canvas-area');
-svg.setAttribute('width',TW); svg.setAttribute('height',TH);
-svg.setAttribute('viewBox',`0 0 ${TW} ${TH}`);
+function updateSvgDimensions(){
+  svg.setAttribute('width',TW); svg.setAttribute('height',TH);
+  svg.setAttribute('viewBox',`0 0 ${TW} ${TH}`);
+}
+updateSvgDimensions();
 
 // Tool state
 let tool='wall';
