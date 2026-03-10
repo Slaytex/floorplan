@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Floorplan Editor — 32′ × 20′</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>Floorplan — <em>32′ × 20′</em></h1>
+  <span class="hscale">¼″ = 1′ &nbsp;·&nbsp; 4″ walls &nbsp;·&nbsp; 4′ sections</span>
+  <span class="hscale" id="zoom-display">100%</span>
+  <div class="hactions">
+    <button class="hbtn" onclick="exportSVG()">↓ SVG</button>
+    <button class="hbtn" onclick="exportPDF()">↓ PDF</button>
+    <button class="hbtn" onclick="exportDXF()">↓ DXF</button>
+    <button class="hbtn" onclick="resetPlan()">↺ Reset</button>
+  </div>
+</header>
+
+<div class="left-panel">
+  <div class="psec">Wall Sections</div>
+  <button class="tbtn active" data-tool="wall"   onclick="setTool('wall')"><div class="ti ti-wall"></div>Wall</button>
+  <button class="tbtn" data-tool="window" onclick="setTool('window')"><div class="ti ti-window"></div>Window</button>
+  <button class="tbtn" data-tool="door"   onclick="setTool('door')"><div class="ti ti-door"></div>Door</button>
+  <div class="psec">Drawing</div>
+  <button class="tbtn" data-tool="floor-line" onclick="setTool('floor-line')"><div class="ti ti-floor"></div>Floor Line</button>
+  <button class="tbtn" data-tool="select"     onclick="setTool('select')"><div class="ti ti-sel">↖</div>Select/Move</button>
+  <div class="psec">Edit</div>
+  <button class="tbtn" data-tool="erase-wall" onclick="setTool('erase-wall')"><div class="ti ti-era">✕</div>Erase Wall</button>
+  <button class="tbtn" onclick="deleteSelected()"><div class="ti ti-era">⌫</div>Delete Sel.</button>
+  <button class="tbtn" onclick="clearLines()"><div class="ti ti-era">✕✕</div>Clear Lines</button>
+  <div class="psec">Dimensions</div>
+  <div class="info-block">
+    Interior<br><span>32′ × 20′</span><br>
+    Overall<br><span>32′8″ × 20′8″</span><br>
+    Wall<br><span>4″ thick</span><br>
+    Sections<br><span>4′ × 8+5=40</span>
+  </div>
+</div>
+
+<div class="canvas-area" id="canvas-area">
+  <div id="zoom-layer">
+    <svg id="fp-svg"></svg>
+  </div>
+</div>
+
+<div class="right-panel">
+  <div class="psec" style="border-top:none;margin-top:0;padding-top:0">Furniture</div>
+  <div style="font-size:8px;color:var(--muted);margin-bottom:2px">Drag onto plan · Right-click rotates</div>
+  <div class="fgrid" id="furn-grid"></div>
+</div>
+
+<div id="status">Wall tool active</div>
+<script src="js/constants.js"></script>
+<script src="js/state.js"></script>
+<script src="js/render.js"></script>
+<script src="js/furniture.js"></script>
+<script src="js/events.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/export.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

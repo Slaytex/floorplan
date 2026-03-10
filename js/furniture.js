@@ -1,0 +1,138 @@
+// ── FURNITURE DEFINITIONS ──
+const FURN={
+  sofa:{label:'Sofa 7′',w:7,h:3,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#e8e0d0',stroke:sel?'#c4853a':'#8a7a60','stroke-width':sel?1.8:1,rx:4}));
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h*.3,fill:'#d0c4a8',stroke:'#8a7a60','stroke-width':.5,rx:2}));
+      for(let i=0;i<3;i++) g.appendChild(e('rect',{x:i*w/3+3,y:h*.32,width:w/3-6,height:h*.62,fill:'#ede5d5',stroke:'#8a7a60','stroke-width':.5,rx:3}));
+      const t=e('text',{x:w/2,y:h*.72,fill:'#6a5a40','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='sofa 7′';g.appendChild(t);
+    }},
+  loveseat:{label:'Loveseat',w:4.5,h:3,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#e8e0d0',stroke:sel?'#c4853a':'#8a7a60','stroke-width':sel?1.8:1,rx:4}));
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h*.3,fill:'#d0c4a8',stroke:'#8a7a60','stroke-width':.5,rx:2}));
+      for(let i=0;i<2;i++) g.appendChild(e('rect',{x:i*w/2+3,y:h*.32,width:w/2-6,height:h*.62,fill:'#ede5d5',stroke:'#8a7a60','stroke-width':.5,rx:3}));
+    }},
+  chair:{label:'Arm Chair',w:3,h:3,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#ddd5c5',stroke:sel?'#c4853a':'#8a7a60','stroke-width':sel?1.8:1,rx:3}));
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h*.28,fill:'#c8bea8',stroke:'#8a7a60','stroke-width':.5,rx:2}));
+      g.appendChild(e('rect',{x:4,y:h*.32,width:w-8,height:h*.62,fill:'#ede5d5',stroke:'#8a7a60','stroke-width':.5,rx:3}));
+    }},
+  bed_queen:{label:'Queen Bed',w:5,h:6.67,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#f0ece0',stroke:sel?'#c4853a':'#9a8a70','stroke-width':sel?1.8:1,rx:2}));
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h*.12,fill:'#c8b890',stroke:'#9a8a70','stroke-width':.5}));
+      g.appendChild(e('rect',{x:5,y:h*.15,width:w/2-9,height:h*.18,fill:'#fffaf0',stroke:'#9a8a70','stroke-width':.5,rx:3}));
+      g.appendChild(e('rect',{x:w/2+4,y:h*.15,width:w/2-9,height:h*.18,fill:'#fffaf0',stroke:'#9a8a70','stroke-width':.5,rx:3}));
+      g.appendChild(e('rect',{x:4,y:h*.36,width:w-8,height:h*.58,fill:'#e0d8c8',stroke:'#9a8a70','stroke-width':.5,rx:2}));
+      const t=e('text',{x:w/2,y:h*.72,fill:'#6a5a40','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='queen';g.appendChild(t);
+    }},
+  bed_twin:{label:'Twin Bed',w:3.25,h:6.5,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#f0ece0',stroke:sel?'#c4853a':'#9a8a70','stroke-width':sel?1.8:1,rx:2}));
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h*.12,fill:'#c8b890',stroke:'#9a8a70','stroke-width':.5}));
+      g.appendChild(e('rect',{x:4,y:h*.15,width:w-8,height:h*.18,fill:'#fffaf0',stroke:'#9a8a70','stroke-width':.5,rx:3}));
+      g.appendChild(e('rect',{x:4,y:h*.36,width:w-8,height:h*.58,fill:'#e0d8c8',stroke:'#9a8a70','stroke-width':.5,rx:2}));
+    }},
+  dining_tbl:{label:'Dining 6′',w:3,h:6,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('ellipse',{cx:w/2,cy:h/2,rx:w/2-2,ry:h/2-2,fill:'#d8ccb0',stroke:sel?'#c4853a':'#9a8060','stroke-width':sel?1.8:1.2}));
+      [{cx:w/2,cy:5},{cx:w/2,cy:h-5},{cx:6,cy:h/3},{cx:w-6,cy:h/3},{cx:6,cy:h*2/3},{cx:w-6,cy:h*2/3}]
+        .forEach(c=>g.appendChild(e('circle',{cx:c.cx,cy:c.cy,r:6,fill:'#e8ddc8',stroke:'#9a8060','stroke-width':.8})));
+      const t=e('text',{x:w/2,y:h/2+3,fill:'#6a5040','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='dining';g.appendChild(t);
+    }},
+  coffee_tbl:{label:'Coffee Tbl',w:4,h:2,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:4,y:4,width:w-8,height:h-8,fill:'#c8b880',stroke:'#8a7840','stroke-width':.5,rx:1}));
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#ddd0a8',stroke:sel?'#c4853a':'#8a7840','stroke-width':sel?1.8:1,rx:2}));
+    }},
+  desk:{label:'Desk 4′',w:4,h:2,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#d4c8a8',stroke:sel?'#c4853a':'#8a7850','stroke-width':sel?1.8:1,rx:1}));
+      g.appendChild(e('rect',{x:0,y:0,width:w*.35,height:h,fill:'#c4b898',stroke:'#8a7850','stroke-width':.5,rx:1}));
+      const t=e('text',{x:w/2,y:h/2+3,fill:'#6a5a30','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='desk 4′';g.appendChild(t);
+    }},
+  bathtub:{label:'Bathtub',w:2.5,h:5,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#e0eef4',stroke:sel?'#c4853a':'#70a0b4','stroke-width':sel?1.8:1,rx:4}));
+      g.appendChild(e('ellipse',{cx:w/2,cy:h*.58,rx:w/2-5,ry:h*.33,fill:'#c8dfe8',stroke:'#70a0b4','stroke-width':.8}));
+      g.appendChild(e('circle',{cx:w/2,cy:h*.12,r:3,fill:'#a8c8d4',stroke:'#70a0b4','stroke-width':.8}));
+      const t=e('text',{x:w/2,y:h*.85,fill:'#4a8098','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='tub';g.appendChild(t);
+    }},
+  toilet:{label:'Toilet',w:1.5,h:2.5,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h*.38,fill:'#ddeae8',stroke:sel?'#c4853a':'#70a0a0','stroke-width':sel?1.8:1,rx:2}));
+      g.appendChild(e('ellipse',{cx:w/2,cy:h*.72,rx:w/2-2,ry:h*.3,fill:'#ddeae8',stroke:'#70a0a0','stroke-width':1}));
+    }},
+  sink:{label:'Sink',w:1.75,h:1.75,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#ddeae8',stroke:sel?'#c4853a':'#70a0a0','stroke-width':sel?1.8:1,rx:2}));
+      g.appendChild(e('ellipse',{cx:w/2,cy:h/2,rx:w/2-4,ry:h/2-4,fill:'#c8dde8',stroke:'#70a0a0','stroke-width':.8}));
+      g.appendChild(e('circle',{cx:w/2,cy:h/2,r:2,fill:'#90b0b8'}));
+    }},
+  range:{label:'Range',w:2.5,h:2.5,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#d0c8c0',stroke:sel?'#c4853a':'#806858','stroke-width':sel?1.8:1}));
+      [[.25,.25],[.75,.25],[.25,.75],[.75,.75]].forEach(([fx,fy])=>{
+        g.appendChild(e('circle',{cx:w*fx,cy:h*fy,r:w*.16,fill:'#a09080',stroke:'#706050','stroke-width':.8}));
+        g.appendChild(e('circle',{cx:w*fx,cy:h*fy,r:w*.07,fill:'#504038'}));
+      });
+    }},
+  bookcase:{label:'Bookcase',w:3,h:1,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#c8b890',stroke:sel?'#c4853a':'#7a6040','stroke-width':sel?1.8:1}));
+      ['#b04030','#4060a0','#306040','#a07020','#6030a0','#204060','#a04020','#408040'].forEach((c,i)=>{
+        g.appendChild(e('rect',{x:i*w/8+1,y:2,width:w/8-2,height:h-4,fill:c,opacity:.7}));
+      });
+    }},
+  kitchen_counter:{label:'Counter 6′',w:6,h:2,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#d8d0c0',stroke:sel?'#c4853a':'#8a7860','stroke-width':sel?1.8:1}));
+      g.appendChild(e('rect',{x:2,y:2,width:w-4,height:h-4,fill:'#e4dcd0',stroke:'#8a7860','stroke-width':.5}));
+      g.appendChild(e('rect',{x:w*.55,y:3,width:w*.35,height:h-6,fill:'#c8dde8',stroke:'#70a0a0','stroke-width':.8,rx:2}));
+      const t=e('text',{x:w*.25,y:h/2+3,fill:'#6a5a40','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='counter';g.appendChild(t);
+    }},
+};
+
+// ── FURNITURE PANEL ──
+function buildPanel(){
+  const grid=document.getElementById('furn-grid');
+  Object.entries(FURN).forEach(([key,def])=>{
+    const item=document.createElement('div');
+    item.className='fitem'; item.draggable=true;
+    const ps=Math.min(60/def.w,44/def.h)*.82;
+    const pw=Math.round(def.w*ps+4),ph=Math.round(def.h*ps+4);
+    const pvg=document.createElementNS(NS,'svg');
+    pvg.setAttribute('width',pw); pvg.setAttribute('height',ph);
+    pvg.setAttribute('viewBox',`0 0 ${pw} ${ph}`);
+    const pg=document.createElementNS(NS,'g');
+    pg.setAttribute('transform','translate(2,2)');
+    def.draw(pg,ps,false);
+    pvg.appendChild(pg);
+    item.appendChild(pvg);
+    const lbl=document.createElement('span'); lbl.textContent=def.label; item.appendChild(lbl);
+    item.addEventListener('dragstart',ev=>ev.dataTransfer.setData('ftype',key));
+    grid.appendChild(item);
+  });
+}
