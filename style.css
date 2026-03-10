@@ -57,7 +57,7 @@ header h1 em{color:var(--accent);font-style:italic}
   pointer-events:none;backdrop-filter:blur(8px);transition:opacity .4s}
 .info-block{font-size:9px;color:var(--muted);line-height:2;padding:4px 4px 0}
 .info-block span{color:var(--text)}
-.name-input{background:transparent;border:none;border-bottom:1px solid var(--border);
+.name-input{background:var(--panel);border:none;border-bottom:1px solid var(--text);
   color:var(--text);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.04em;
   width:100%;padding:3px 2px 4px;outline:none}
 .name-input:focus{border-bottom-color:var(--accent)}

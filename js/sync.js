@@ -5,8 +5,9 @@
 
 let _ws = null, _wsReady = false, _applyingRemote = false;
 let _myId = null, _myName = 'User 1';
-const _remoteCursors = new Map(); // id → {name, x, y, color}
+const _remoteCursors = new Map(); // id → {name, x, y, color, el}
 let _cursorThrottle = 0;
+let _cursorOverlay = null;
 
 const CURSOR_COLORS = ['#e8a84a','#7ab87e','#5ba8c8','#b87ab0','#c87a8a','#7ac8b8','#c8b05a'];
 
@@ -27,6 +28,12 @@ function initSync(){
   // Populate the name input with saved name
   const nameInput = document.getElementById('user-name-input');
   if(nameInput) nameInput.value = _myName;
+
+  // Cursor overlay — a div that sits on top of the canvas, never wiped by SVG redraws
+  _cursorOverlay = document.createElement('div');
+  _cursorOverlay.id = 'cursor-overlay';
+  _cursorOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:10';
+  ca.appendChild(_cursorOverlay);
 
   const proto  = location.protocol === 'https:' ? 'wss' : 'ws';
   const wsUrl  = `${proto}://${location.host}/ws?room=${encodeURIComponent(room)}`;
@@ -56,15 +63,15 @@ function initSync(){
         if(msg.type === 'users')        updateUserBadge(room, msg.count);
         if(msg.type === 'cursor')       handleRemoteCursor(msg);
         if(msg.type === 'cursor-leave') removeCursor(msg.id);
-      } catch(e) {}
+      } catch(e) { console.error('[sync] onmessage error:', e); }
     };
 
     _ws.onclose = () => {
       _wsReady = false;
       badge.textContent = `Room: ${room} (reconnecting…)`;
       badge.style.color = '#9e7a7a';
+      _remoteCursors.forEach(c => c.el && c.el.remove());
       _remoteCursors.clear();
-      renderCursors();
       setTimeout(connect, 2000);
     };
 
@@ -73,40 +80,36 @@ function initSync(){
 
   connect();
 
-  // Broadcast cursor position on mouse move (throttled to ~30fps)
-  svg.addEventListener('mousemove', ev => {
+  // Broadcast cursor position (throttled ~30fps)
+  ca.addEventListener('mousemove', ev => {
     if(!_wsReady) return;
     const now = Date.now();
     if(now - _cursorThrottle < 33) return;
     _cursorThrottle = now;
-    const pt = svgPt(ev);
-    _ws.send(JSON.stringify({type:'cursor', id:_myId, name:_myName, x:Math.round(pt.x), y:Math.round(pt.y)}));
+    const rect = ca.getBoundingClientRect();
+    const svgX = Math.round((ev.clientX - rect.left - panX) / zoom);
+    const svgY = Math.round((ev.clientY - rect.top  - panY) / zoom);
+    _ws.send(JSON.stringify({type:'cursor', id:_myId, name:_myName, x:svgX, y:svgY}));
   });
 
-  svg.addEventListener('mouseleave', () => {
+  ca.addEventListener('mouseleave', () => {
     if(_wsReady) _ws.send(JSON.stringify({type:'cursor-leave', id:_myId}));
   });
 
-  // Wrap render functions so cursors are always re-drawn on top
+  // Wrap applyTransform so cursors reposition on zoom/pan
+  const _origApplyTransform = applyTransform;
+  window.applyTransform = function(){
+    _origApplyTransform();
+    repositionAllCursors();
+  };
+
+  // Wrap render to broadcast state changes
   const _origRender = render;
   window.render = function(){
     _origRender();
-    renderCursors();
     if(!_applyingRemote && _wsReady){
       _ws.send(JSON.stringify({type:'state', state:captureState()}));
     }
-  };
-
-  const _origRenderLinesOnly = renderLinesOnly;
-  window.renderLinesOnly = function(){
-    _origRenderLinesOnly();
-    renderCursors();
-  };
-
-  const _origRenderFurnitureOnly = renderFurnitureOnly;
-  window.renderFurnitureOnly = function(){
-    _origRenderFurnitureOnly();
-    renderCursors();
   };
 }
 
@@ -122,71 +125,47 @@ function updateMyName(){
 }
 
 function handleRemoteCursor(msg){
-  const existing = _remoteCursors.get(msg.id);
-  _remoteCursors.set(msg.id, {
-    name:  msg.name,
-    x:     msg.x,
-    y:     msg.y,
-    color: existing ? existing.color : _colorForId(msg.id),
-  });
-  renderCursors();
+  let cursor = _remoteCursors.get(msg.id);
+  if(!cursor){
+    // First time seeing this user — create their cursor DOM element
+    const color = _colorForId(msg.id);
+    const el = document.createElement('div');
+    el.style.cssText = 'position:absolute;pointer-events:none;';
+    el.innerHTML = `
+      <div style="position:relative;">
+        <div style="width:10px;height:10px;border-radius:50%;background:${color};border:2px solid #1c1a17;position:absolute;top:-5px;left:-5px;"></div>
+        <div style="position:absolute;left:8px;top:-10px;background:${color};color:#1a1614;font-family:DM Mono,monospace;font-size:10px;font-weight:500;padding:2px 8px;border-radius:8px;white-space:nowrap;opacity:0.95;">${msg.name || 'User'}</div>
+      </div>`;
+    _cursorOverlay.appendChild(el);
+    cursor = {name: msg.name, x: msg.x, y: msg.y, color, el};
+    _remoteCursors.set(msg.id, cursor);
+  } else {
+    cursor.name = msg.name;
+    cursor.x    = msg.x;
+    cursor.y    = msg.y;
+    // Update name label if it changed
+    const label = cursor.el.querySelector('div > div:last-child');
+    if(label && label.textContent !== msg.name) label.textContent = msg.name || 'User';
+  }
+  positionCursor(cursor);
+}
+
+function positionCursor(cursor){
+  // Convert SVG coords → canvas-relative screen coords
+  const sx = cursor.x * zoom + panX;
+  const sy = cursor.y * zoom + panY;
+  cursor.el.style.left = sx + 'px';
+  cursor.el.style.top  = sy + 'px';
+}
+
+function repositionAllCursors(){
+  _remoteCursors.forEach(cursor => positionCursor(cursor));
 }
 
 function removeCursor(id){
+  const cursor = _remoteCursors.get(id);
+  if(cursor && cursor.el) cursor.el.remove();
   _remoteCursors.delete(id);
-  renderCursors();
-}
-
-function renderCursors(){
-  const old = document.getElementById('cursors-g');
-  if(old) old.remove();
-  if(_remoteCursors.size === 0) return;
-
-  const ns = 'http://www.w3.org/2000/svg';
-  const g  = document.createElementNS(ns, 'g');
-  g.id = 'cursors-g';
-
-  _remoteCursors.forEach(({name, x, y, color}) => {
-    const cg = document.createElementNS(ns, 'g');
-
-    // Cursor dot
-    const dot = document.createElementNS(ns, 'circle');
-    dot.setAttribute('cx', x);
-    dot.setAttribute('cy', y);
-    dot.setAttribute('r',  '4');
-    dot.setAttribute('fill', color);
-    dot.setAttribute('stroke', '#1c1a17');
-    dot.setAttribute('stroke-width', '1.5');
-
-    // Name pill
-    const lx = x + 8, ly = y - 6;
-    const lw = Math.max(40, name.length * 5.8 + 14);
-    const lh = 14;
-
-    const pill = document.createElementNS(ns, 'rect');
-    pill.setAttribute('x',      lx);
-    pill.setAttribute('y',      ly - lh + 2);
-    pill.setAttribute('width',  lw);
-    pill.setAttribute('height', lh);
-    pill.setAttribute('rx',     '7');
-    pill.setAttribute('fill',   color);
-    pill.setAttribute('opacity','0.92');
-
-    const txt = document.createElementNS(ns, 'text');
-    txt.setAttribute('x',           lx + 7);
-    txt.setAttribute('y',           ly - 2);
-    txt.setAttribute('font-family', 'DM Mono, monospace');
-    txt.setAttribute('font-size',   '7.5');
-    txt.setAttribute('fill',        '#1a1614');
-    txt.textContent = name;
-
-    cg.appendChild(pill);
-    cg.appendChild(dot);
-    cg.appendChild(txt);
-    g.appendChild(cg);
-  });
-
-  svg.appendChild(g);
 }
 
 function captureState(){
