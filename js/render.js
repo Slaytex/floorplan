@@ -26,6 +26,7 @@ function render(){
   drawCorners();
   drawDoorSwings();
   drawDims();
+  drawPortalFrame();
   drawResizeButtons();
   bindSvgEvents();
 }
@@ -400,5 +401,63 @@ function renderFurnitureOnly(){
     fg.appendChild(hit);
     g.appendChild(fg);
   });
+  svg.appendChild(g);
+}
+
+function drawPortalFrame(){
+  // Axial portal frame ("compass") — feet are 3" wide (X) × 8" tall (Y), 56" apart edge-to-edge
+  // Number and position of frames scales with IW/IH:
+  //   N = max(1, ceil(IW/IH) - 1)
+  //   N=1 → single center frame
+  //   N≥2 → outer bay = (IW - (N-1)×IH) / 2 from each wall, frames every IH ft
+  const FOOT_W = Math.round(3/12 * SC);   // 3"  = 6px
+  const FOOT_H = Math.round(8/12 * SC);   // 8"  = 16px
+  const SEP    = Math.round(56/12 * SC);  // 56" edge-to-edge = 112px
+  const CTC    = SEP + FOOT_H;            // center-to-center = 128px
+  const cy     = W_PX + IPH / 2;
+  const f1y    = cy - CTC / 2 - FOOT_H / 2;
+  const f2y    = cy + CTC / 2 - FOOT_H / 2;
+  const CH     = 5;
+
+  // Compute frame column positions in SVG px along the X axis
+  const N = Math.max(1, Math.ceil(IW / IH) - 1);
+  const frameXs = [];
+  if(N === 1){
+    frameXs.push(W_PX + IPW / 2);
+  } else {
+    const outerFt = (IW - (N - 1) * IH) / 2; // ft from interior left wall
+    for(let i = 0; i < N; i++){
+      frameXs.push(W_PX + (outerFt + i * IH) * SC);
+    }
+  }
+
+  const g = e('g',{id:'portal-frame'});
+
+  for(const cx of frameXs){
+    const fx = cx - FOOT_W / 2;
+
+    // Dashed axis line between the feet
+    g.appendChild(e('line',{x1:cx,y1:f1y+FOOT_H,x2:cx,y2:f2y,
+      stroke:'#9a8a7a','stroke-width':.6,'stroke-dasharray':'3,3',opacity:.7}));
+
+    // Feet — dark fill + wall hatch
+    for(const fy of [f1y, f2y]){
+      g.appendChild(e('rect',{x:fx,y:fy,width:FOOT_W,height:FOOT_H,
+        fill:'#2a2420',stroke:'#1a1410','stroke-width':.5}));
+      g.appendChild(e('rect',{x:fx,y:fy,width:FOOT_W,height:FOOT_H,
+        fill:'url(#wall-hatch)',stroke:'none'}));
+    }
+
+    // Crosshair at plan center for this frame column
+    g.appendChild(e('line',{x1:cx-CH,y1:cy,x2:cx+CH,y2:cy,stroke:'#9a8a7a','stroke-width':.6,opacity:.7}));
+    g.appendChild(e('line',{x1:cx,y1:cy-CH,x2:cx,y2:cy+CH,stroke:'#9a8a7a','stroke-width':.6,opacity:.7}));
+  }
+
+  // Label above the first frame
+  const lbl=e('text',{x:frameXs[0]+5,y:f1y-3,fill:'#9a8a7a',
+    'font-family':'DM Mono,monospace','font-size':'6','letter-spacing':'.08em'});
+  lbl.textContent='compass frame';
+  g.appendChild(lbl);
+
   svg.appendChild(g);
 }
