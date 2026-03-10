@@ -81,19 +81,13 @@ function initSync(){
   connect();
 
   // Broadcast cursor position (throttled ~30fps)
-  ca.addEventListener('mousemove', ev => {
+  document.addEventListener('mousemove', ev => {
     if(!_wsReady) return;
     const now = Date.now();
     if(now - _cursorThrottle < 33) return;
     _cursorThrottle = now;
-    const rect = ca.getBoundingClientRect();
-    const svgX = Math.round((ev.clientX - rect.left - panX) / zoom);
-    const svgY = Math.round((ev.clientY - rect.top  - panY) / zoom);
-    _ws.send(JSON.stringify({type:'cursor', id:_myId, name:_myName, x:svgX, y:svgY}));
-  });
-
-  ca.addEventListener('mouseleave', () => {
-    if(_wsReady) _ws.send(JSON.stringify({type:'cursor-leave', id:_myId}));
+    const pt = svgPt(ev);
+    _ws.send(JSON.stringify({type:'cursor', id:_myId, name:_myName, x:Math.round(pt.x), y:Math.round(pt.y)}));
   });
 
   // Wrap applyTransform so cursors reposition on zoom/pan
@@ -127,7 +121,6 @@ function updateMyName(){
 function handleRemoteCursor(msg){
   let cursor = _remoteCursors.get(msg.id);
   if(!cursor){
-    // First time seeing this user — create their cursor DOM element
     const color = _colorForId(msg.id);
     const el = document.createElement('div');
     el.style.cssText = 'position:absolute;pointer-events:none;';
@@ -143,7 +136,6 @@ function handleRemoteCursor(msg){
     cursor.name = msg.name;
     cursor.x    = msg.x;
     cursor.y    = msg.y;
-    // Update name label if it changed
     const label = cursor.el.querySelector('div > div:last-child');
     if(label && label.textContent !== msg.name) label.textContent = msg.name || 'User';
   }
@@ -151,7 +143,6 @@ function handleRemoteCursor(msg){
 }
 
 function positionCursor(cursor){
-  // Convert SVG coords → canvas-relative screen coords
   const sx = cursor.x * zoom + panX;
   const sy = cursor.y * zoom + panY;
   cursor.el.style.left = sx + 'px';
