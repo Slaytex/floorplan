@@ -8,21 +8,45 @@ function setTool(t){
     'window':'Click wall sections to add windows',
     'door':'Click wall sections to add doors',
     'floor-line':'Click & drag to draw room divider lines (snaps to 1ft grid)',
-    'select':'Drag furniture to move · Right-click to rotate 90°',
-    'erase-wall':'Click sections to reset to wall · Click lines to select & delete',
+    'select':'Click walls/furniture to select · Delete key removes · Right-click rotates 90° · ⌥Right-click rotates 45°',
   };
   setStatus(msgs[t]||'');
 }
 function deleteSelected(){
-  if(selLine!==null){floorLines=floorLines.filter(l=>l.id!==selLine);selLine=null;}
-  if(selFurn!==null){furniture=furniture.filter(f=>f.id!==selFurn);selFurn=null;}
+  if(selOpening!==null){
+    const ln=floorLines.find(l=>l.id===selOpening.lineId);
+    if(ln&&ln.openings) ln.openings=ln.openings.filter(o=>o.id!==selOpening.openingId);
+    selOpening=null;
+  } else if(selLine!==null){
+    floorLines=floorLines.filter(l=>l.id!==selLine);
+    selLine=null;
+  } else if(selFurn!==null){
+    furniture=furniture.filter(f=>f.id!==selFurn);
+    selFurn=null;
+  }
   render();
 }
-function clearLines(){if(confirm('Clear all floor lines?')){floorLines=[];selLine=null;render();}}
+function addOpening(){
+  if(selLine===null){setStatus('Select a wall first, then add opening');return;}
+  const ln=floorLines.find(l=>l.id===selLine);
+  if(!ln)return;
+  const wallLen=Math.abs(ln.x2-ln.x1)+Math.abs(ln.y2-ln.y1);
+  if(wallLen<OPENING_W+8){setStatus('Wall too short for an opening');return;}
+  if(!ln.openings) ln.openings=[];
+  const offset=(wallLen-OPENING_W)/2; // center it
+  ln.openings.push({id:openingId++,offset,width:OPENING_W});
+  selOpening={lineId:ln.id,openingId:ln.openings[ln.openings.length-1].id};
+  render();
+  setStatus('Opening added — drag it to reposition along the wall');
+}
+function clearLines(){if(confirm('Clear all interior walls?')){floorLines=[];selLine=null;selOpening=null;render();}}
 function resetPlan(){
   if(!confirm('Reset entire plan?'))return;
   ['top','bottom','left','right'].forEach(s=>{secs[s]=secs[s].map(()=>'wall');});
-  floorLines=[];furniture=[];selLine=null;selFurn=null;dragWall=null;snapIndicator=null;hoverEndpoint=null;
+  floorLines=[];furniture=[];
+  selLine=null;selFurn=null;selOpening=null;
+  dragWall=null;dragOpening=null;
+  snapIndicator=null;hoverEndpoint=null;
   defaults(); render();
 }
 

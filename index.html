@@ -29,9 +29,8 @@
   <button class="tbtn" data-tool="floor-line" onclick="setTool('floor-line')"><div class="ti ti-floor"></div>Floor Line</button>
   <button class="tbtn" data-tool="select"     onclick="setTool('select')"><div class="ti ti-sel">↖</div>Select/Move</button>
   <div class="psec">Edit</div>
-  <button class="tbtn" data-tool="erase-wall" onclick="setTool('erase-wall')"><div class="ti ti-era">✕</div>Erase Wall</button>
-  <button class="tbtn" onclick="deleteSelected()"><div class="ti ti-era">⌫</div>Delete Sel.</button>
-  <button class="tbtn" onclick="clearLines()"><div class="ti ti-era">✕✕</div>Clear Lines</button>
+  <button class="tbtn" onclick="addOpening()"><div class="ti ti-floor">⊟</div>Add Opening</button>
+  <button class="tbtn" onclick="clearLines()"><div class="ti ti-era">✕✕</div>Clear Walls</button>
   <div class="psec">Dimensions</div>
   <div class="info-block">
     Interior<br><span>32′ × 20′</span><br>
@@ -49,7 +48,7 @@
 
 <div class="right-panel">
   <div class="psec" style="border-top:none;margin-top:0;padding-top:0">Furniture</div>
-  <div style="font-size:8px;color:var(--muted);margin-bottom:2px">Drag onto plan · Right-click rotates</div>
+  <div style="font-size:8px;color:var(--muted);margin-bottom:2px">Drag onto plan · RC=90° · ⌥RC=45°</div>
   <div class="fgrid" id="furn-grid"></div>
 </div>
 

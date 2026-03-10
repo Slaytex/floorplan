@@ -1,7 +1,6 @@
 // ── RENDER ──
 function render(){
   svg.innerHTML='';
-  // Defs
   const defs=e('defs');
   const pat=e('pattern',{id:'g4',width:SEC,height:SEC,patternUnits:'userSpaceOnUse',x:W_PX,y:W_PX});
   pat.appendChild(e('rect',{width:SEC,height:SEC,fill:'none',stroke:'#c8c0b0','stroke-width':.4}));
@@ -18,7 +17,6 @@ function render(){
   defs.appendChild(cp);
   svg.appendChild(defs);
 
-  // Floor
   svg.appendChild(e('rect',{x:W_PX,y:W_PX,width:IPW,height:IPH,fill:'#fdfaf4'}));
   svg.appendChild(e('rect',{x:W_PX,y:W_PX,width:IPW,height:IPH,fill:'url(#g4)'}));
 
@@ -30,7 +28,7 @@ function render(){
   bindSvgEvents();
 }
 
-// Returns bounding rect for an axis-aligned interior wall line
+// Returns bounding rect for an axis-aligned interior wall
 function wallR(ln){
   if(ln.y1===ln.y2){
     return{x:Math.min(ln.x1,ln.x2),y:ln.y1-W_PX/2,width:Math.abs(ln.x2-ln.x1),height:W_PX};
@@ -39,55 +37,122 @@ function wallR(ln){
   }
 }
 
+// Renders a wall with openings into group g. showHandles adds drag/resize handles.
+function renderWallBody(g, ln, sel, showHandles){
+  const horiz=ln.y1===ln.y2;
+  const r=wallR(ln);
+  const wallLen=horiz?r.width:r.height;
+  const openings=(ln.openings||[]).slice().sort((a,b)=>a.offset-b.offset);
+
+  // Build filled segments around openings
+  const segs=[];
+  let pos=0;
+  for(const op of openings){
+    const o=Math.max(0,Math.min(wallLen-op.width,op.offset));
+    if(o>pos) segs.push({start:pos,len:o-pos});
+    pos=o+op.width;
+  }
+  if(pos<wallLen) segs.push({start:pos,len:wallLen-pos});
+
+  // Render wall segments
+  const sc=sel?'#c4853a':'#1a1410', sw=sel?1.5:.5;
+  for(const seg of segs){
+    const sr=horiz
+      ?{x:r.x+seg.start,y:r.y,width:Math.max(0,seg.len),height:r.height}
+      :{x:r.x,y:r.y+seg.start,width:r.width,height:Math.max(0,seg.len)};
+    if(sr.width>0&&sr.height>0){
+      g.appendChild(e('rect',{...sr,fill:'#2a2420',stroke:sc,'stroke-width':sw}));
+      g.appendChild(e('rect',{...sr,fill:'url(#wall-hatch)',stroke:'none'}));
+    }
+  }
+
+  // Transparent hit area for selecting the wall
+  const hit=e('rect',{...r,fill:'transparent',stroke:'none'});
+  hit.style.cursor='pointer';
+  hit.addEventListener('click',ev=>{
+    ev.stopPropagation();
+    if(tool==='select'){selLine=(selLine===ln.id)?null:ln.id;selOpening=null;render();}
+  });
+  g.appendChild(hit);
+
+  // Length label
+  const mx=(ln.x1+ln.x2)/2,my=(ln.y1+ln.y2)/2;
+  const len=(Math.abs(ln.x2-ln.x1)+Math.abs(ln.y2-ln.y1))/SC;
+  const lx=horiz?mx:mx-10,ly=horiz?my-6:my;
+  const t=e('text',{x:lx,y:ly,fill:'#9a8aaa','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+  t.textContent=len.toFixed(1)+'′'; g.appendChild(t);
+
+  // Openings: bookend lines + draggable hit areas
+  for(const op of openings){
+    const opSel=selOpening&&selOpening.lineId===ln.id&&selOpening.openingId===op.id;
+    const cOff=Math.max(0,Math.min(wallLen-op.width,op.offset));
+    const bk='#c8b080';
+    if(horiz){
+      const ox=r.x+cOff, oy=r.y;
+      g.appendChild(e('line',{x1:ox,y1:oy-3,x2:ox,y2:oy+r.height+3,stroke:bk,'stroke-width':2.5}));
+      g.appendChild(e('line',{x1:ox+op.width,y1:oy-3,x2:ox+op.width,y2:oy+r.height+3,stroke:bk,'stroke-width':2.5}));
+      const oh=e('rect',{x:ox,y:oy,width:op.width,height:r.height,
+        fill:opSel?'rgba(196,133,58,.2)':'rgba(200,176,128,.08)',
+        stroke:opSel?'#c4853a':bk,'stroke-width':opSel?1.5:.8,
+        'stroke-dasharray':opSel?'':'3,2'});
+      oh.style.cursor='ew-resize';
+      oh.addEventListener('mousedown',ev=>{
+        ev.stopPropagation();
+        selOpening={lineId:ln.id,openingId:op.id};
+        dragOpening={lineId:ln.id,openingId:op.id,startOffset:cOff,startPx:svgPt(ev).x};
+        render();
+      });
+      oh.addEventListener('click',ev=>ev.stopPropagation());
+      g.appendChild(oh);
+    } else {
+      const oy=r.y+cOff, ox=r.x;
+      g.appendChild(e('line',{x1:ox-3,y1:oy,x2:ox+r.width+3,y2:oy,stroke:bk,'stroke-width':2.5}));
+      g.appendChild(e('line',{x1:ox-3,y1:oy+op.width,x2:ox+r.width+3,y2:oy+op.width,stroke:bk,'stroke-width':2.5}));
+      const oh=e('rect',{x:ox,y:oy,width:r.width,height:op.width,
+        fill:opSel?'rgba(196,133,58,.2)':'rgba(200,176,128,.08)',
+        stroke:opSel?'#c4853a':bk,'stroke-width':opSel?1.5:.8,
+        'stroke-dasharray':opSel?'':'3,2'});
+      oh.style.cursor='ns-resize';
+      oh.addEventListener('mousedown',ev=>{
+        ev.stopPropagation();
+        selOpening={lineId:ln.id,openingId:op.id};
+        dragOpening={lineId:ln.id,openingId:op.id,startOffset:cOff,startPx:svgPt(ev).y};
+        render();
+      });
+      oh.addEventListener('click',ev=>ev.stopPropagation());
+      g.appendChild(oh);
+    }
+  }
+
+  // Resize / move handles (full render only)
+  if(sel&&showHandles){
+    [[ln.x1,ln.y1,'end1'],[ln.x2,ln.y2,'end2']].forEach(([hx,hy,type])=>{
+      const h=e('circle',{cx:hx,cy:hy,r:5,fill:'#c4853a',stroke:'#ffd090','stroke-width':1.2});
+      h.style.cursor=horiz?'ew-resize':'ns-resize';
+      h.addEventListener('mousedown',ev=>{ev.stopPropagation();dragWall={id:ln.id,type,axis:horiz?'h':'v'};});
+      g.appendChild(h);
+    });
+    const mh=e('circle',{cx:mx,cy:my,r:5,fill:'#7a9e7e',stroke:'#a0c8a0','stroke-width':1.2});
+    mh.style.cursor='move';
+    mh.addEventListener('mousedown',ev=>{
+      ev.stopPropagation();
+      const pt=svgPt(ev);
+      dragWall={id:ln.id,type:'move',startX:pt.x,startY:pt.y,ox1:ln.x1,oy1:ln.y1,ox2:ln.x2,oy2:ln.y2};
+    });
+    g.appendChild(mh);
+  }
+}
+
 function renderLines(){
   const g=e('g',{id:'lines-g','clip-path':'url(#iclip)'});
-  floorLines.forEach(ln=>{
-    const sel=ln.id===selLine;
-    const r=wallR(ln);
-    const horiz=ln.y1===ln.y2;
-    g.appendChild(e('rect',{...r,fill:'#2a2420',stroke:sel?'#c4853a':'#1a1410','stroke-width':sel?1.5:.5}));
-    g.appendChild(e('rect',{...r,fill:'url(#wall-hatch)',stroke:'none'}));
-    const hit=e('rect',{...r,fill:'transparent',stroke:'none'});
-    hit.style.cursor='pointer';
-    hit.addEventListener('click',ev=>{
-      if(tool==='select'||tool==='erase-wall'){ev.stopPropagation();selLine=(selLine===ln.id)?null:ln.id;render();}
-    });
-    g.appendChild(hit);
-    // length label
-    const mx=(ln.x1+ln.x2)/2,my=(ln.y1+ln.y2)/2;
-    const len=(Math.abs(ln.x2-ln.x1)+Math.abs(ln.y2-ln.y1))/SC;
-    const lx=horiz?mx:mx-10, ly=horiz?my-6:my;
-    const t=e('text',{x:lx,y:ly,fill:'#9a8aaa','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
-    t.textContent=len.toFixed(1)+'′'; g.appendChild(t);
-    // handles for selected wall
-    if(sel){
-      [[ln.x1,ln.y1,'end1'],[ln.x2,ln.y2,'end2']].forEach(([hx,hy,type])=>{
-        const h=e('circle',{cx:hx,cy:hy,r:5,fill:'#c4853a',stroke:'#ffd090','stroke-width':1.2});
-        h.style.cursor=horiz?'ew-resize':'ns-resize';
-        h.addEventListener('mousedown',ev=>{
-          ev.stopPropagation();
-          dragWall={id:ln.id,type,axis:horiz?'h':'v'};
-        });
-        g.appendChild(h);
-      });
-      const mh=e('circle',{cx:mx,cy:my,r:5,fill:'#7a9e7e',stroke:'#a0c8a0','stroke-width':1.2});
-      mh.style.cursor='move';
-      mh.addEventListener('mousedown',ev=>{
-        ev.stopPropagation();
-        const pt=svgPt(ev);
-        dragWall={id:ln.id,type:'move',startX:pt.x,startY:pt.y,ox1:ln.x1,oy1:ln.y1,ox2:ln.x2,oy2:ln.y2};
-      });
-      g.appendChild(mh);
-    }
-  });
-  // hover "+" endpoint indicator
+  floorLines.forEach(ln=>renderWallBody(g,ln,ln.id===selLine,true));
+
   if(hoverEndpoint&&tool==='floor-line'&&!drawLine){
     const{x:hx,y:hy}=hoverEndpoint;
     g.appendChild(e('circle',{cx:hx,cy:hy,r:9,fill:'rgba(196,133,58,.15)',stroke:'#c4853a','stroke-width':1.2}));
     g.appendChild(e('line',{x1:hx-5,y1:hy,x2:hx+5,y2:hy,stroke:'#c4853a','stroke-width':1.8}));
     g.appendChild(e('line',{x1:hx,y1:hy-5,x2:hx,y2:hy+5,stroke:'#c4853a','stroke-width':1.8}));
   }
-  // snap indicator
   if(snapIndicator){
     g.appendChild(e('circle',{cx:snapIndicator.x,cy:snapIndicator.y,r:8,fill:'none',stroke:'#c4853a','stroke-width':1.5,opacity:.9}));
     g.appendChild(e('circle',{cx:snapIndicator.x,cy:snapIndicator.y,r:2,fill:'#c4853a'}));
@@ -114,6 +179,7 @@ function renderFurniture(){
     const hit=e('rect',{x:0,y:0,width:pw,height:ph,fill:'transparent',stroke:'none'});
     hit.style.cursor='move';
     hit.addEventListener('mousedown',ev=>onFurnDown(ev,f.id));
+    hit.addEventListener('click',ev=>ev.stopPropagation());
     fg.appendChild(hit);
     g.appendChild(fg);
   });
@@ -162,11 +228,11 @@ function drawSec(side,i,type,x,y,w,h){
   }
   const hit=e('rect',{x,y,width:w,height:h,fill:'transparent',stroke:'none'});
   hit.style.cursor='pointer';
-  hit.addEventListener('mouseenter',()=>{if(tool!=='floor-line'&&tool!=='select'){hit.setAttribute('fill','rgba(196,133,58,.15)');hit.setAttribute('stroke','#c4853a');hit.setAttribute('stroke-width','1.5');}});
+  hit.addEventListener('mouseenter',()=>{if(tool==='wall'||tool==='window'||tool==='door'){hit.setAttribute('fill','rgba(196,133,58,.15)');hit.setAttribute('stroke','#c4853a');hit.setAttribute('stroke-width','1.5');}});
   hit.addEventListener('mouseleave',()=>{hit.setAttribute('fill','transparent');hit.setAttribute('stroke','none');});
-  hit.addEventListener('click',()=>{
+  hit.addEventListener('click',ev=>{
     if(tool==='wall'||tool==='window'||tool==='door'){secs[side][i]=tool;render();}
-    else if(tool==='erase-wall'){secs[side][i]='wall';render();}
+    ev.stopPropagation();
   });
   g.appendChild(hit);
   svg.appendChild(g);
@@ -189,12 +255,7 @@ function drawDims(){
 
 function renderLinesOnly(){
   const g=e('g',{id:'lines-g','clip-path':'url(#iclip)'});
-  floorLines.forEach(ln=>{
-    const sel=ln.id===selLine;
-    const r=wallR(ln);
-    g.appendChild(e('rect',{...r,fill:'#2a2420',stroke:sel?'#c4853a':'#1a1410','stroke-width':sel?1.5:.5}));
-    g.appendChild(e('rect',{...r,fill:'url(#wall-hatch)',stroke:'none'}));
-  });
+  floorLines.forEach(ln=>renderWallBody(g,ln,ln.id===selLine,false));
   if(hoverEndpoint&&tool==='floor-line'&&!drawLine){
     const{x:hx,y:hy}=hoverEndpoint;
     g.appendChild(e('circle',{cx:hx,cy:hy,r:9,fill:'rgba(196,133,58,.15)',stroke:'#c4853a','stroke-width':1.2}));
@@ -223,6 +284,7 @@ function renderFurnitureOnly(){
     const hit=e('rect',{x:0,y:0,width:pw,height:ph,fill:'transparent',stroke:'none'});
     hit.style.cursor='move';
     hit.addEventListener('mousedown',ev=>onFurnDown(ev,f.id));
+    hit.addEventListener('click',ev=>ev.stopPropagation());
     fg.appendChild(hit);
     g.appendChild(fg);
   });

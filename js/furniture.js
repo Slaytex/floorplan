@@ -42,6 +42,23 @@ const FURN={
       g.appendChild(e('rect',{x:4,y:h*.15,width:w-8,height:h*.18,fill:'#fffaf0',stroke:'#9a8a70','stroke-width':.5,rx:3}));
       g.appendChild(e('rect',{x:4,y:h*.36,width:w-8,height:h*.58,fill:'#e0d8c8',stroke:'#9a8a70','stroke-width':.5,rx:2}));
     }},
+  dining_round:{label:'Round Table',w:4,h:4,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('ellipse',{cx:w/2,cy:h/2,rx:w/2-2,ry:h/2-2,fill:'#d8ccb0',stroke:sel?'#c4853a':'#9a8060','stroke-width':sel?1.8:1.2}));
+      [{cx:w/2,cy:4},{cx:w/2,cy:h-4},{cx:4,cy:h/2},{cx:w-4,cy:h/2}]
+        .forEach(c=>g.appendChild(e('circle',{cx:c.cx,cy:c.cy,r:5,fill:'#e8ddc8',stroke:'#9a8060','stroke-width':.8})));
+      const t=e('text',{x:w/2,y:h/2+3,fill:'#6a5040','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='round 4′';g.appendChild(t);
+    }},
+  dining_chair:{label:'Dining Chair',w:1.5,h:1.75,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      // back rail
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h*.22,fill:'#c8b890',stroke:sel?'#c4853a':'#8a7050','stroke-width':sel?1.8:1,rx:2}));
+      // seat
+      g.appendChild(e('rect',{x:2,y:h*.26,width:w-4,height:h*.7,fill:'#ddd0a8',stroke:sel?'#c4853a':'#8a7050','stroke-width':sel?1.8:.8,rx:2}));
+    }},
   dining_tbl:{label:'Dining 6′',w:3,h:6,
     draw(g,s,sel){
       const w=this.w*s,h=this.h*s;
@@ -112,6 +129,29 @@ const FURN={
       g.appendChild(e('rect',{x:w*.55,y:3,width:w*.35,height:h-6,fill:'#c8dde8',stroke:'#70a0a0','stroke-width':.8,rx:2}));
       const t=e('text',{x:w*.25,y:h/2+3,fill:'#6a5a40','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
       t.textContent='counter';g.appendChild(t);
+    }},
+  refrigerator:{label:'Refrigerator',w:2.5,h:2.5,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#d8d8d8',stroke:sel?'#c4853a':'#888888','stroke-width':sel?1.8:1,rx:2}));
+      // door divider
+      g.appendChild(e('line',{x1:2,y1:h*.48,x2:w-2,y2:h*.48,stroke:'#888888','stroke-width':.8}));
+      // handles
+      g.appendChild(e('line',{x1:w*.7,y1:h*.08,x2:w*.7,y2:h*.38,stroke:'#707070','stroke-width':2,rx:1}));
+      g.appendChild(e('line',{x1:w*.7,y1:h*.56,x2:w*.7,y2:h*.92,stroke:'#707070','stroke-width':2,rx:1}));
+      const t=e('text',{x:w/2,y:h/2+3,fill:'#505050','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='fridge';g.appendChild(t);
+    }},
+  dishwasher:{label:'Dishwasher',w:2,h:2,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#d0d4d8',stroke:sel?'#c4853a':'#808890','stroke-width':sel?1.8:1,rx:1}));
+      // control panel strip
+      g.appendChild(e('rect',{x:2,y:2,width:w-4,height:h*.18,fill:'#b0b8c0',stroke:'#808890','stroke-width':.5,rx:1}));
+      // door panel
+      g.appendChild(e('rect',{x:3,y:h*.25,width:w-6,height:h*.68,fill:'#c8cdd2',stroke:'#808890','stroke-width':.5,rx:1}));
+      const t=e('text',{x:w/2,y:h*.62,fill:'#505860','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='DW';g.appendChild(t);
     }},
 };
 

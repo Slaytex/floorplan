@@ -18,6 +18,10 @@ let floorLines=[], lineId=0, drawLine=null, selLine=null;
 let dragWall=null, snapIndicator=null, hoverEndpoint=null;
 const SNAP_DIST=14;
 
+// Openings (gaps in interior walls)
+let selOpening=null, dragOpening=null, openingId=0;
+const OPENING_W=36; // default 1.5ft (36px) opening width
+
 // Furniture
 let furniture=[], furnId=0, selFurn=null, dragFurn=null;
 

@@ -17,6 +17,15 @@ function findSnapEndpoint(x,y,excludeId=null){
   return null;
 }
 
+// Clamp / remove openings that no longer fit after wall resize
+function clampOpenings(ln){
+  if(!ln.openings||!ln.openings.length)return;
+  const wallLen=Math.abs(ln.x2-ln.x1)+Math.abs(ln.y2-ln.y1);
+  ln.openings=ln.openings
+    .filter(op=>op.width+4<=wallLen)
+    .map(op=>({...op,offset:Math.max(0,Math.min(wallLen-op.width,op.offset))}));
+}
+
 // ── ZOOM & PAN ──
 function applyTransform(){
   document.getElementById('zoom-layer').style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;
@@ -39,8 +48,13 @@ ca.addEventListener('wheel',ev=>{
 },{passive:false});
 
 document.addEventListener('keydown',ev=>{
-  if(ev.code==='Space'&&!ev.repeat&&!ev.target.matches('input,textarea')){
+  if(ev.target.matches('input,textarea'))return;
+  if(ev.code==='Space'&&!ev.repeat){
     spaceDown=true; ca.style.cursor='grab'; ev.preventDefault();
+  }
+  if(ev.key==='Delete'||ev.key==='Backspace'){
+    ev.preventDefault();
+    deleteSelected();
   }
 });
 document.addEventListener('keyup',ev=>{
@@ -59,6 +73,12 @@ function bindSvgEvents(){
   svg.addEventListener('mousedown',onSvgDown);
   svg.addEventListener('mousemove',onSvgMove);
   svg.addEventListener('mouseup',onSvgUp);
+  // Click on background (nothing stopped propagation) → deselect
+  svg.addEventListener('click',()=>{
+    if(selLine!==null||selFurn!==null||selOpening!==null){
+      selLine=null;selFurn=null;selOpening=null;render();
+    }
+  });
 }
 
 function onSvgDown(ev){
@@ -75,7 +95,7 @@ function onSvgMove(ev){
   if(tool==='floor-line'){
     const pt=clampI(svgPt(ev));
     const sx=snapI(pt.x),sy=snapI(pt.y);
-    const he=findSnapEndpoint(sx,sy,drawLine?null:null);
+    const he=findSnapEndpoint(sx,sy);
     if(he!==hoverEndpoint){hoverEndpoint=he;if(!drawLine){const old=document.getElementById('lines-g');if(old)old.remove();renderLinesOnly();}}
     if(drawLine){
       const dx=sx-drawLine.x1,dy=sy-drawLine.y1;
@@ -118,6 +138,20 @@ function onSvgMove(ev){
     if(old)old.remove();
     renderLinesOnly();
   }
+  if(dragOpening){
+    const ln=floorLines.find(l=>l.id===dragOpening.lineId);
+    if(ln){
+      const horiz=ln.y1===ln.y2;
+      const pt=svgPt(ev);
+      const delta=(horiz?pt.x:pt.y)-dragOpening.startPx;
+      const wallLen=Math.abs(ln.x2-ln.x1)+Math.abs(ln.y2-ln.y1);
+      const op=ln.openings&&ln.openings.find(o=>o.id===dragOpening.openingId);
+      if(op) op.offset=Math.max(0,Math.min(wallLen-op.width,dragOpening.startOffset+delta));
+    }
+    const old=document.getElementById('lines-g');
+    if(old)old.remove();
+    renderLinesOnly();
+  }
   if(dragFurn){
     const pt=svgPt(ev);
     const f=furniture.find(f=>f.id===dragFurn.id);
@@ -130,10 +164,15 @@ function onSvgMove(ev){
 function onSvgUp(ev){
   if(tool==='floor-line'&&drawLine){
     const dx=drawLine.x2-drawLine.x1,dy=drawLine.y2-drawLine.y1;
-    if(Math.abs(dx)>4||Math.abs(dy)>4) floorLines.push({id:lineId++,x1:drawLine.x1,y1:drawLine.y1,x2:drawLine.x2,y2:drawLine.y2});
+    if(Math.abs(dx)>4||Math.abs(dy)>4) floorLines.push({id:lineId++,x1:drawLine.x1,y1:drawLine.y1,x2:drawLine.x2,y2:drawLine.y2,openings:[]});
     drawLine=null; snapIndicator=null; render();
   }
-  if(dragWall){dragWall=null; snapIndicator=null; render();}
+  if(dragWall){
+    const ln=floorLines.find(l=>l.id===dragWall.id);
+    if(ln) clampOpenings(ln);
+    dragWall=null; snapIndicator=null; render();
+  }
+  if(dragOpening){dragOpening=null; render();}
   if(dragFurn){dragFurn=null; render();}
 }
 
@@ -143,17 +182,20 @@ function onFurnDown(ev,id){
   const pt=svgPt(ev);
   const f=furniture.find(f=>f.id===id);
   if(!f)return;
-  selFurn=id;
+  selFurn=id; selLine=null; selOpening=null;
   dragFurn={id,ox:pt.x-f.x,oy:pt.y-f.y};
   render();
 }
+
+// Right-click: rotate 90°; alt+right-click: rotate 45°
 svg.addEventListener('contextmenu',ev=>{
   ev.preventDefault();
   const pt=svgPt(ev);
+  const deg=ev.altKey?45:90;
   furniture.forEach(f=>{
     const def=FURN[f.type];if(!def)return;
     if(pt.x>=f.x&&pt.x<=f.x+def.w*SC&&pt.y>=f.y&&pt.y<=f.y+def.h*SC){
-      f.rot=((f.rot||0)+90)%360; render();
+      f.rot=((f.rot||0)+deg)%360; render();
     }
   });
 });
