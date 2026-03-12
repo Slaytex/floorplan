@@ -17,6 +17,10 @@
   .room-name{flex:1;font-size:12px;color:var(--text)}
   .room-meta{font-size:8px;letter-spacing:.08em;color:var(--muted);white-space:nowrap}
   .room-open{font-size:9px;letter-spacing:.1em;color:var(--accent)}
+  .room-del{font-size:11px;color:var(--muted);background:none;border:none;
+    cursor:pointer;padding:2px 6px;border-radius:3px;opacity:0;transition:opacity .12s;line-height:1;font-family:'DM Mono',monospace;}
+  .room-row:hover .room-del{opacity:1}
+  .room-del:hover{color:#c47a7a !important;opacity:1 !important}
   .empty-state{font-size:10px;color:var(--muted);padding:8px 4px}
   .create-row{display:flex;gap:8px;margin-top:4px}
   .create-input{flex:1;background:var(--panel);border:none;
@@ -65,7 +69,16 @@ async function loadRooms(){
         <span class="room-name">${esc(rm.name)}</span>
         <span class="room-meta">${fmt(rm.lastModified)}</span>
         <span class="room-open">Open →</span>
+        <button class="room-del" data-id="${esc(rm.id)}" title="Delete room">✕</button>
       </a>`).join('');
+    el.querySelectorAll('.room-del').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        e.preventDefault(); e.stopPropagation();
+        if(!confirm('Delete this room? This cannot be undone.')) return;
+        await fetch(`/api/rooms/${btn.dataset.id}`, {method:'DELETE'});
+        loadRooms();
+      });
+    });
     setStatus('Ready');
   } catch(e) {
     setStatus('Could not reach server');

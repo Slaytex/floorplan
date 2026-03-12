@@ -73,6 +73,24 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // DELETE /api/rooms/:id — remove a room and its saved state
+  const delMatch = req.method === 'DELETE' && url.pathname.match(/^\/api\/rooms\/([^/]+)$/);
+  if(delMatch){
+    const id = delMatch[1];
+    const index = loadIndex().filter(r => r.id !== id);
+    saveIndex(index);
+    const file = path.join(ROOMS_DIR, `${id}.json`);
+    if(fs.existsSync(file)) fs.unlinkSync(file);
+    // Close any live WS clients in this room
+    if(rooms.has(id)){
+      rooms.get(id).clients.forEach(c => c.terminate());
+      rooms.delete(id);
+    }
+    res.writeHead(200, {'Content-Type':'application/json'});
+    res.end(JSON.stringify({ok:true}));
+    return;
+  }
+
   res.writeHead(200, {'Content-Type':'text/plain'});
   res.end('Floorplan WebSocket server is running.\n');
 });
