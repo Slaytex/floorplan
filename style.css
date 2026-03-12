@@ -34,6 +34,13 @@ header h1 em{color:var(--accent);font-style:italic}
   font-size:11px;cursor:pointer;transition:all .12s;text-align:left;width:100%}
 .tbtn:hover{background:var(--panel2);color:var(--text)}
 .tbtn.active{background:var(--panel2);border-color:var(--accent);color:var(--accent)}
+.tbtn{position:relative}
+.tbtn[data-tip]::after{content:attr(data-tip);position:absolute;left:calc(100% + 10px);top:50%;
+  transform:translateY(-50%);background:var(--panel2);border:1px solid var(--border);
+  border-radius:4px;padding:5px 10px;font-size:9px;letter-spacing:.06em;color:var(--text);
+  white-space:nowrap;pointer-events:none;opacity:0;z-index:100;
+  transition:opacity .15s ease 0s}
+.tbtn[data-tip]:hover::after{opacity:1;transition:opacity .15s ease 2000ms}
 .tbtn-kbd{margin-left:auto;padding:1px 5px;border:1px solid var(--muted);border-bottom-width:2px;
   border-radius:3px;background:transparent;color:var(--muted);font-family:'DM Mono',monospace;
   font-size:9px;line-height:14px;pointer-events:none;opacity:.55;flex-shrink:0}
