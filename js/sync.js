@@ -46,6 +46,31 @@ function initSync(){
   badge.textContent  = `Room: ${room}`;
   document.querySelector('.hactions').before(badge);
 
+  // Voice controls (shown only when in a room)
+  const voiceWrap = document.createElement('div');
+  voiceWrap.style.cssText = 'display:flex;gap:6px;align-items:center;';
+  const voiceJoinBtn = document.createElement('button');
+  voiceJoinBtn.id = 'voice-join-btn';
+  voiceJoinBtn.className = 'hbtn';
+  voiceJoinBtn.textContent = '◎ Voice';
+  voiceJoinBtn.onclick = joinVoice;
+  const voiceMuteBtn = document.createElement('button');
+  voiceMuteBtn.id = 'voice-mute-btn';
+  voiceMuteBtn.className = 'hbtn';
+  voiceMuteBtn.textContent = '⊘ Mute';
+  voiceMuteBtn.style.display = 'none';
+  voiceMuteBtn.onclick = toggleMute;
+  const voiceLeaveBtn = document.createElement('button');
+  voiceLeaveBtn.id = 'voice-leave-btn';
+  voiceLeaveBtn.className = 'hbtn';
+  voiceLeaveBtn.textContent = '⊗ Leave';
+  voiceLeaveBtn.style.display = 'none';
+  voiceLeaveBtn.onclick = leaveVoice;
+  voiceWrap.appendChild(voiceJoinBtn);
+  voiceWrap.appendChild(voiceMuteBtn);
+  voiceWrap.appendChild(voiceLeaveBtn);
+  document.querySelector('.hactions').before(voiceWrap);
+
   function connect(){
     _ws = new WebSocket(wsUrl);
 
@@ -60,9 +85,13 @@ function initSync(){
       try {
         const msg = JSON.parse(ev.data);
         if(msg.type === 'init' || msg.type === 'state') applyRemoteState(msg.state);
-        if(msg.type === 'users')        updateUserBadge(room, msg.count);
+        if(msg.type === 'users')        updateUserBadge(room, msg.count, msg.voiceIds);
         if(msg.type === 'cursor')       handleRemoteCursor(msg);
         if(msg.type === 'cursor-leave') removeCursor(msg.id);
+        if(msg.type === 'voice-join')   handleVoiceJoin(msg);
+        if(msg.type === 'voice-leave')  handleVoiceLeave(msg);
+        if(msg.type === 'voice-users')  handleVoiceUsers(msg);
+        if(msg.type==='rtc-offer'||msg.type==='rtc-answer'||msg.type==='rtc-ice') _handleRtcMsg(msg);
       } catch(e) { console.error('[sync] onmessage error:', e); }
     };
 
@@ -177,11 +206,159 @@ function applyRemoteState(state){
   _applyingRemote = false;
 }
 
-function updateUserBadge(room, count){
+function updateUserBadge(room, count, voiceIds){
   const el = document.getElementById('room-badge');
   if(!el) return;
   el.style.color = '#7a9e7e';
   el.textContent = count > 1
     ? `Room: ${room} · ${count} users`
     : `Room: ${room}`;
+  // Refresh voice indicators for all known voice users
+  if(voiceIds){
+    // Clear indicators for users no longer in voice
+    _remoteCursors.forEach((c,id)=>{ if(!voiceIds.includes(id)) setCursorVoice(id,false); });
+    voiceIds.forEach(id=>setCursorVoice(id,true));
+  }
+}
+
+// ── VOICE CHAT (WebRTC peer-to-peer mesh) ──
+let _inVoice    = false;
+let _localStream= null;
+let _peerConns  = new Map(); // peerId → RTCPeerConnection
+let _muted      = false;
+const _ICE      = [{urls:'stun:stun.l.google.com:19302'}];
+
+function joinVoice(){
+  if(_inVoice || !_wsReady) return;
+  navigator.mediaDevices.getUserMedia({audio:true, video:false})
+    .then(stream=>{
+      _localStream = stream;
+      _inVoice     = true;
+      _updateVoiceUI();
+      _ws.send(JSON.stringify({type:'voice-join', id:_myId, name:_myName}));
+      // Server responds with voice-users list; we initiate offers in handleVoiceUsers
+    })
+    .catch(()=>{ setStatus('Microphone access denied.'); });
+}
+
+function leaveVoice(){
+  if(!_inVoice) return;
+  _inVoice = false;
+  if(_localStream){ _localStream.getTracks().forEach(t=>t.stop()); _localStream=null; }
+  _peerConns.forEach((pc,id)=>{ pc.close(); _removePeerAudio(id); });
+  _peerConns.clear();
+  if(_wsReady) _ws.send(JSON.stringify({type:'voice-leave', id:_myId}));
+  _updateVoiceUI();
+}
+
+function toggleMute(){
+  _muted = !_muted;
+  if(_localStream) _localStream.getAudioTracks().forEach(t=>t.enabled=!_muted);
+  _updateVoiceUI();
+}
+
+function _updateVoiceUI(){
+  const joinBtn  = document.getElementById('voice-join-btn');
+  const muteBtn  = document.getElementById('voice-mute-btn');
+  const leaveBtn = document.getElementById('voice-leave-btn');
+  if(!joinBtn) return;
+  if(_inVoice){
+    joinBtn.style.display  = 'none';
+    muteBtn.style.display  = '';
+    leaveBtn.style.display = '';
+    muteBtn.textContent    = _muted ? '⊕ Unmute' : '⊘ Mute';
+  } else {
+    joinBtn.style.display  = '';
+    muteBtn.style.display  = 'none';
+    leaveBtn.style.display = 'none';
+  }
+}
+
+async function _getOrCreatePc(peerId){
+  if(_peerConns.has(peerId)) return _peerConns.get(peerId);
+  const pc = new RTCPeerConnection({iceServers:_ICE});
+  _peerConns.set(peerId, pc);
+  if(_localStream) _localStream.getTracks().forEach(t=>pc.addTrack(t, _localStream));
+  pc.onicecandidate = ev=>{
+    if(ev.candidate && _wsReady)
+      _ws.send(JSON.stringify({type:'rtc-ice', from:_myId, to:peerId, candidate:ev.candidate}));
+  };
+  pc.ontrack = ev=>{
+    let audio = document.getElementById('_vpa-'+peerId);
+    if(!audio){
+      audio = document.createElement('audio');
+      audio.id = '_vpa-'+peerId;
+      audio.autoplay = true;
+      document.body.appendChild(audio);
+    }
+    audio.srcObject = ev.streams[0];
+  };
+  pc.onconnectionstatechange = ()=>{
+    if(pc.connectionState==='failed'||pc.connectionState==='closed'){
+      _peerConns.delete(peerId); _removePeerAudio(peerId);
+    }
+  };
+  return pc;
+}
+
+function _removePeerAudio(id){
+  const el = document.getElementById('_vpa-'+id);
+  if(el) el.remove();
+}
+
+async function _handleRtcMsg(msg){
+  if(!_inVoice) return;
+  if(msg.type==='rtc-offer'){
+    const pc = await _getOrCreatePc(msg.from);
+    await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    _ws.send(JSON.stringify({type:'rtc-answer', from:_myId, to:msg.from, sdp:answer}));
+  } else if(msg.type==='rtc-answer'){
+    const pc = _peerConns.get(msg.from);
+    if(pc) await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+  } else if(msg.type==='rtc-ice'){
+    const pc = _peerConns.get(msg.from);
+    if(pc && msg.candidate) await pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+  }
+}
+
+function handleVoiceJoin(msg){
+  // A peer joined voice — show indicator on their cursor; they will send us an offer
+  setCursorVoice(msg.id, true);
+}
+
+function handleVoiceLeave(msg){
+  setCursorVoice(msg.id, false);
+  const pc = _peerConns.get(msg.id);
+  if(pc){ pc.close(); _peerConns.delete(msg.id); _removePeerAudio(msg.id); }
+}
+
+async function handleVoiceUsers(msg){
+  // Server sent us who's already in voice — we initiate offers to all of them
+  for(const peerId of (msg.ids||[])){
+    setCursorVoice(peerId, true);
+    if(!_inVoice) continue;
+    const pc = await _getOrCreatePc(peerId);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    _ws.send(JSON.stringify({type:'rtc-offer', from:_myId, to:peerId, sdp:offer}));
+  }
+}
+
+// Show/hide a green voice dot on a remote user's cursor label
+function setCursorVoice(id, active){
+  const cursor = _remoteCursors.get(id);
+  if(!cursor) return;
+  const lbl = cursor.el.querySelector('[data-lbl]');
+  if(!lbl) return;
+  const existing = lbl.querySelector('[data-vdot]');
+  if(active && !existing){
+    const dot = document.createElement('span');
+    dot.setAttribute('data-vdot','');
+    dot.style.cssText='display:inline-block;width:6px;height:6px;border-radius:50%;background:#7ab87e;margin-right:5px;flex-shrink:0;';
+    lbl.prepend(dot);
+  } else if(!active && existing){
+    existing.remove();
+  }
 }

@@ -116,6 +116,25 @@ wss.on('connection', (ws, req) => {
       if(msg.type === 'cursor-leave'){
         broadcast(room, msg, ws);
       }
+      // ── Voice signaling ──
+      if(msg.type === 'voice-join'){
+        ws._inVoice = true;
+        // Tell the new joiner who's already in voice so they can initiate offers
+        const voiceIds=[...room.clients].filter(c=>c._inVoice&&c!==ws&&c._clientId).map(c=>c._clientId);
+        send(ws, {type:'voice-users', ids:voiceIds});
+        broadcast(room, {type:'voice-join', id:msg.id, name:msg.name}, ws);
+        broadcastUserCount(room);
+      }
+      if(msg.type === 'voice-leave'){
+        ws._inVoice = false;
+        broadcast(room, {type:'voice-leave', id:msg.id}, ws);
+        broadcastUserCount(room);
+      }
+      // WebRTC signaling — unicast to specific peer by clientId
+      if(msg.type==='rtc-offer'||msg.type==='rtc-answer'||msg.type==='rtc-ice'){
+        const target=[...room.clients].find(c=>c._clientId===msg.to);
+        if(target) send(target, msg);
+      }
     } catch(e) {
       console.error('Bad message:', e.message);
     }
@@ -127,6 +146,7 @@ wss.on('connection', (ws, req) => {
     broadcastUserCount(room);
     if(ws._clientId){
       broadcast(room, {type:'cursor-leave', id:ws._clientId}, null);
+      if(ws._inVoice) broadcast(room, {type:'voice-leave', id:ws._clientId}, null);
     }
     // Clean up empty rooms from memory after a delay (state is on disk)
     if(room.clients.size === 0){
@@ -149,7 +169,8 @@ function broadcast(room, obj, exclude){
   });
 }
 function broadcastUserCount(room){
-  broadcast(room, {type:'users', count: room.clients.size}, null);
+  const voiceIds=[...room.clients].filter(c=>c._inVoice&&c._clientId).map(c=>c._clientId);
+  broadcast(room, {type:'users', count:room.clients.size, voiceIds}, null);
 }
 
 server.listen(PORT, () => {
