@@ -103,6 +103,21 @@ document.addEventListener('keydown',ev=>{
     ev.preventDefault();
     undo();
   }
+  // Z-order: Cmd/Ctrl+[ (send back), Cmd/Ctrl+] (bring forward)
+  if((ev.metaKey||ev.ctrlKey)&&(ev.key==='['||ev.key===']')){
+    ev.preventDefault();
+    if(selFurn){
+      const idx=furniture.findIndex(f=>f.id===selFurn);
+      if(idx===-1)return;
+      if(ev.key==='['&&idx>0){
+        [furniture[idx-1],furniture[idx]]=[furniture[idx],furniture[idx-1]];
+        saveHistory(); render();
+      } else if(ev.key===']'&&idx<furniture.length-1){
+        [furniture[idx],furniture[idx+1]]=[furniture[idx+1],furniture[idx]];
+        saveHistory(); render();
+      }
+    }
+  }
 });
 document.addEventListener('keyup',ev=>{
   if(ev.code==='Space'){spaceDown=false;isPanning=false;ca.style.cursor='';document.body.style.cursor='';}

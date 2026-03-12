@@ -235,6 +235,26 @@ const FURN={
       // Pot outline
       g.appendChild(e('circle',{cx,cy,r,fill:'none',stroke:sel?'#c4853a':'#3a5a2a','stroke-width':sel?1.8:1}));
     }},
+  washer_dryer:{label:'Stack W/D',w:2.25,h:2.5,wallSnap:true,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s,sw=sel?1.8:1;
+      // Body
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#d8d8dc',stroke:sel?'#c4853a':'#8888a0','stroke-width':sw,rx:1}));
+      // Control panel strip (top)
+      g.appendChild(e('rect',{x:2,y:2,width:w-4,height:h*.14,fill:'#b0b0c0',stroke:'#8888a0','stroke-width':.5,rx:1}));
+      // Dryer drum (top unit) — circle in upper half
+      const cr=w*.3,cy1=h*.38;
+      g.appendChild(e('circle',{cx:w/2,cy:cy1,r:cr,fill:'#c0c0cc',stroke:'#8888a0','stroke-width':.8}));
+      g.appendChild(e('circle',{cx:w/2,cy:cy1,r:cr*.45,fill:'#a8a8b8'}));
+      // Divider line between units
+      g.appendChild(e('line',{x1:3,y1:h*.55,x2:w-3,y2:h*.55,stroke:'#8888a0','stroke-width':.6}));
+      // Washer drum (bottom unit)
+      const cy2=h*.75;
+      g.appendChild(e('circle',{cx:w/2,cy:cy2,r:cr,fill:'#c0c0cc',stroke:'#8888a0','stroke-width':.8}));
+      g.appendChild(e('circle',{cx:w/2,cy:cy2,r:cr*.45,fill:'#a8a8b8'}));
+      const t=e('text',{x:w/2,y:h*.95,fill:'#505060','font-family':'DM Mono,monospace','font-size':'6','text-anchor':'middle'});
+      t.textContent='W/D';g.appendChild(t);
+    }},
   dishwasher:{label:'Dishwasher',w:2,h:2,
     draw(g,s,sel){
       const w=this.w*s,h=this.h*s;
