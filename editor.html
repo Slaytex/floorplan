@@ -69,5 +69,29 @@
 <script src="js/export.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/main.js"></script>
+<script>
+(function(){
+  const tip=document.createElement('div');
+  tip.id='tip';
+  document.body.appendChild(tip);
+  let timer;
+  document.querySelectorAll('.tbtn[data-tip]').forEach(btn=>{
+    btn.addEventListener('mouseenter',()=>{
+      clearTimeout(timer);
+      timer=setTimeout(()=>{
+        const r=btn.getBoundingClientRect();
+        tip.textContent=btn.dataset.tip;
+        tip.style.left=(r.right+10)+'px';
+        tip.style.top=(r.top+r.height/2)+'px';
+        tip.classList.add('tip-visible');
+      },2000);
+    });
+    btn.addEventListener('mouseleave',()=>{
+      clearTimeout(timer);
+      tip.classList.remove('tip-visible');
+    });
+  });
+})();
+</script>
 </body>
 </html>
