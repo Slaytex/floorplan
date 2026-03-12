@@ -58,6 +58,12 @@ document.addEventListener('keydown',ev=>{
   if(ev.code==='Space'&&!ev.repeat){
     spaceDown=true; ca.style.cursor='grab'; document.body.style.cursor='grab'; ev.preventDefault();
   }
+  if(ev.key==='Escape'){
+    drawLine=null; snapIndicator=null; hoverEndpoint=null;
+    selLine=null; selFurn=null; selOpening=null;
+    setTool('wall');
+    render();
+  }
   if(ev.key==='Delete'||ev.key==='Backspace'){
     ev.preventDefault();
     deleteSelected();
