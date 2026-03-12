@@ -190,6 +190,51 @@ const FURN={
       // Border
       g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'none',stroke:sel?'#c4853a':'#5a9ab0','stroke-width':sel?1.8:1,rx:1}));
     }},
+  tv_55:{label:'TV 55″',w:4,h:1.5,wallSnap:true,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s,sw=sel?1.8:1;
+      // TV body — thin slab at back (wall side)
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h*.42,fill:'#1c1c20',stroke:sel?'#c4853a':'#383840','stroke-width':sw,rx:1}));
+      // Screen face
+      g.appendChild(e('rect',{x:2,y:2,width:w-4,height:h*.36,fill:'#1a2f4a',stroke:'none',rx:1}));
+      const t=e('text',{x:w/2,y:h*.28,fill:'#4a7090','font-family':'DM Mono,monospace','font-size':'6','text-anchor':'middle'});
+      t.textContent='55″';g.appendChild(t);
+      // Console/stand (room side)
+      g.appendChild(e('rect',{x:w*.12,y:h*.46,width:w*.76,height:h*.52,fill:'#2e2820',stroke:sel?'#c4853a':'#4a3e30','stroke-width':sw,rx:1}));
+    }},
+  plant:{label:'Plant',w:2,h:2,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      const cx=w/2,cy=h/2,r=Math.min(w,h)/2-1;
+      // Six leaf clusters
+      for(let i=0;i<6;i++){
+        const a=i*Math.PI/3;
+        g.appendChild(e('circle',{cx:cx+Math.cos(a)*r*.52,cy:cy+Math.sin(a)*r*.52,r:r*.5,fill:'#5a9448',stroke:'none',opacity:.82}));
+      }
+      // Stem centre
+      g.appendChild(e('circle',{cx,cy,r:r*.28,fill:'#2e6828'}));
+      // Pot outline
+      g.appendChild(e('circle',{cx,cy,r,fill:'none',stroke:sel?'#c4853a':'#3a5a2a','stroke-width':sel?1.8:1}));
+    }},
+  plant_lg:{label:'Plant Lg',w:3,h:3,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      const cx=w/2,cy=h/2,r=Math.min(w,h)/2-1;
+      // Eight leaf clusters for larger silhouette
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4;
+        g.appendChild(e('circle',{cx:cx+Math.cos(a)*r*.54,cy:cy+Math.sin(a)*r*.54,r:r*.46,fill:'#4e8840',stroke:'none',opacity:.82}));
+      }
+      // Inner ring
+      for(let i=0;i<4;i++){
+        const a=i*Math.PI/2+Math.PI/4;
+        g.appendChild(e('circle',{cx:cx+Math.cos(a)*r*.22,cy:cy+Math.sin(a)*r*.22,r:r*.28,fill:'#3a7030',stroke:'none',opacity:.9}));
+      }
+      // Stem
+      g.appendChild(e('circle',{cx,cy,r:r*.2,fill:'#285828'}));
+      // Pot outline
+      g.appendChild(e('circle',{cx,cy,r,fill:'none',stroke:sel?'#c4853a':'#3a5a2a','stroke-width':sel?1.8:1}));
+    }},
   dishwasher:{label:'Dishwasher',w:2,h:2,
     draw(g,s,sel){
       const w=this.w*s,h=this.h*s;
