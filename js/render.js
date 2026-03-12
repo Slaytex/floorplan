@@ -194,6 +194,12 @@ function renderFurniture(showSelection = true){
     const fg=e('g',{transform:`translate(${f.x},${f.y}) rotate(${f.rot||0},${pw/2},${ph/2})`,'data-fid':f.id});
     const sel=f.id===selFurn;
     def.draw(fg,SC,sel,iw,ih);
+    if(def.sizeModal){
+      const dot=e('circle',{cx:pw/2,cy:ph/2,r:4,fill:'#9a8a7a',stroke:'#fdfaf4','stroke-width':1,opacity:.85});
+      dot.style.cursor='pointer';
+      dot.addEventListener('click',ev=>{ev.stopPropagation();showCounterModal(f,f.x+pw/2,f.y+ph/2);});
+      fg.appendChild(dot);
+    }
     if(showSelection&&sel){
       fg.appendChild(e('rect',{x:-2,y:-2,width:pw+4,height:ph+4,fill:'none',stroke:'#c4853a','stroke-width':1.5,'stroke-dasharray':'4,2',rx:2}));
       if(def.resizable){

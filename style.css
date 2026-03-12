@@ -70,6 +70,19 @@ header h1 em{color:var(--accent);font-style:italic}
   color:var(--text);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.04em;
   width:100%;padding:3px 2px 4px;outline:none}
 .name-input:focus{border-bottom-color:var(--accent)}
+#counter-modal{position:fixed;z-index:1100;background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;padding:10px 12px;box-shadow:0 4px 16px rgba(0,0,0,.5);
+  display:flex;flex-direction:column;gap:7px;min-width:120px}
+.cm-row{display:flex;align-items:center;gap:6px}
+.cm-label{font-size:9px;letter-spacing:.1em;color:var(--muted);width:10px}
+.cm-unit{font-size:9px;color:var(--muted)}
+.cm-row input{width:60px;background:var(--panel);border:1px solid var(--border);border-radius:3px;
+  color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:3px 5px;outline:none;text-align:right}
+.cm-row input:focus{border-color:var(--accent)}
+.cm-apply{padding:4px 0;border:1px solid var(--border);border-radius:4px;
+  background:var(--panel);color:var(--accent);font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:.08em;cursor:pointer;transition:all .12s}
+.cm-apply:hover{border-color:var(--accent);background:rgba(196,133,58,.1)}
 
 @media print{
   @page{size:11in 8.5in landscape;margin:.75in}

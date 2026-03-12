@@ -142,7 +142,7 @@ const FURN={
       const t=e('text',{x:w/2,y:h/2+3,fill:'#505050','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
       t.textContent='fridge';g.appendChild(t);
     }},
-  counter:{label:'Counter 4′',w:4,h:2,wallSnap:true,resizable:true,noRotate:true,
+  counter:{label:'Counter 4′',w:4,h:2,resizable:true,noRotate:true,sizeModal:true,
     draw(g,s,sel,iw,ih){
       const w=(iw||this.w)*s,h=(ih||this.h)*s;
       const ts=0.5*s; // 6" tile = 0.5ft

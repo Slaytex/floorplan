@@ -60,6 +60,12 @@
 </div>
 
 <div id="status">Wall tool active</div>
+
+<div id="counter-modal" style="display:none">
+  <div class="cm-row"><span class="cm-label">W</span><input type="number" id="cm-w" min="6" max="480" step="1"><span class="cm-unit">″</span></div>
+  <div class="cm-row"><span class="cm-label">H</span><input type="number" id="cm-h" min="6" max="480" step="1"><span class="cm-unit">″</span></div>
+  <button class="cm-apply" onclick="applyCounterSize()">Apply</button>
+</div>
 <script src="js/constants.js"></script>
 <script src="js/state.js"></script>
 <script src="js/render.js"></script>
