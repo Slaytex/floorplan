@@ -104,6 +104,18 @@ document.addEventListener('keydown',ev=>{
     undo();
   }
   // Z-order: Cmd/Ctrl+[ (send back), Cmd/Ctrl+] (bring forward)
+  if(ev.shiftKey&&ev.key==='D'){
+    ev.preventDefault();
+    if(selFurn){
+      const f=furniture.find(f=>f.id===selFurn);
+      if(f){
+        const copy={...f,id:crypto.randomUUID(),x:f.x+10,y:f.y+10};
+        furniture.push(copy);
+        selFurn=copy.id;
+        saveHistory();render();
+      }
+    }
+  }
   if((ev.metaKey||ev.ctrlKey)&&(ev.key==='['||ev.key===']')){
     ev.preventDefault();
     if(selFurn){
