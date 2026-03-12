@@ -1,6 +1,6 @@
 const NS='http://www.w3.org/2000/svg';
 // Scale: 24px = 1ft  (1/4"=1ft, displayed at comfortable screen size)
-const SC=24, W_PX=Math.round(4/12*SC); // 8px wall
+const SC=24, W_PX=Math.round(6/12*SC); // 12px wall (6" thick)
 const SEC=4*SC; // 96px per 4ft section
 let IW=32,IH=20;
 let IPW=IW*SC,IPH=IH*SC; // 768 x 480

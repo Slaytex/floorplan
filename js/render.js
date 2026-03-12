@@ -189,12 +189,31 @@ function renderFurniture(showSelection = true){
   const g=e('g',{id:'furn-g'});
   furniture.forEach(f=>{
     const def=FURN[f.type]; if(!def)return;
-    const pw=def.w*SC,ph=def.h*SC;
+    const iw=f.w||def.w, ih=f.h||def.h;
+    const pw=iw*SC,ph=ih*SC;
     const fg=e('g',{transform:`translate(${f.x},${f.y}) rotate(${f.rot||0},${pw/2},${ph/2})`,'data-fid':f.id});
     const sel=f.id===selFurn;
-    def.draw(fg,SC,sel);
+    def.draw(fg,SC,sel,iw,ih);
     if(showSelection&&sel){
       fg.appendChild(e('rect',{x:-2,y:-2,width:pw+4,height:ph+4,fill:'none',stroke:'#c4853a','stroke-width':1.5,'stroke-dasharray':'4,2',rx:2}));
+      if(def.resizable){
+        // East handle — resize width
+        const eh=e('rect',{x:pw-4,y:ph/2-4,width:8,height:8,fill:'#c4853a',stroke:'#ffd090','stroke-width':1,rx:2});
+        eh.style.cursor='ew-resize';
+        eh.addEventListener('mousedown',ev=>{
+          ev.stopPropagation();
+          dragFurnResize={id:f.id,axis:'w',startVal:svgPt(ev).x,startW:iw,startH:ih};
+        });
+        fg.appendChild(eh);
+        // South handle — resize height
+        const sh=e('rect',{x:pw/2-4,y:ph-4,width:8,height:8,fill:'#c4853a',stroke:'#ffd090','stroke-width':1,rx:2});
+        sh.style.cursor='ns-resize';
+        sh.addEventListener('mousedown',ev=>{
+          ev.stopPropagation();
+          dragFurnResize={id:f.id,axis:'h',startVal:svgPt(ev).y,startW:iw,startH:ih};
+        });
+        fg.appendChild(sh);
+      }
     }
     const hit=e('rect',{x:0,y:0,width:pw,height:ph,fill:'transparent',stroke:'none'});
     hit.style.cursor='move';

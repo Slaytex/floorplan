@@ -27,7 +27,7 @@ const OPENING_STD=72;    // 36" — standard door
 const OPENING_POCKET=64; // 32" — pocket door
 
 // Furniture
-let furniture=[], furnId=0, selFurn=null, dragFurn=null;
+let furniture=[], furnId=0, selFurn=null, dragFurn=null, dragFurnResize=null;
 
 // Zoom & pan
 let zoom=1, panX=0, panY=0, isPanning=false, panStart=null, spaceDown=false;

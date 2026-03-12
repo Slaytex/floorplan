@@ -142,9 +142,9 @@ const FURN={
       const t=e('text',{x:w/2,y:h/2+3,fill:'#505050','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
       t.textContent='fridge';g.appendChild(t);
     }},
-  counter:{label:'Counter 4′',w:4,h:2,wallSnap:true,
-    draw(g,s,sel){
-      const w=this.w*s,h=this.h*s;
+  counter:{label:'Counter 4′',w:4,h:2,wallSnap:true,resizable:true,noRotate:true,
+    draw(g,s,sel,iw,ih){
+      const w=(iw||this.w)*s,h=(ih||this.h)*s;
       const ts=0.5*s; // 6" tile = 0.5ft
       // Base fill
       g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#ddd8c8',stroke:sel?'#c4853a':'#8a7860','stroke-width':sel?1.8:1,rx:1}));

@@ -6,33 +6,35 @@ function svgPt(ev){
 }
 function snap(v){return Math.round(v/SC)*SC;}
 function clampI(pt){return{x:Math.max(W_PX,Math.min(W_PX+IPW,pt.x)),y:Math.max(W_PX,Math.min(W_PX+IPH,pt.y))};}
-function clampFurn(x,y,def,rot){
+function clampFurn(x,y,def,rot,iw,ih){
   const r=rot||0;
-  const w=(r%180===90)?def.h:def.w;
-  const h=(r%180===90)?def.w:def.h;
+  const bw=iw||def.w, bh=ih||def.h;
+  const w=(r%180===90)?bh:bw;
+  const h=(r%180===90)?bw:bh;
   return{x:Math.max(W_PX,Math.min(W_PX+IPW-w*SC,x)),y:Math.max(W_PX,Math.min(W_PX+IPH-h*SC,y))};
 }
-function snapFurnToWalls(x,y,def,rot){
+function snapFurnToWalls(x,y,def,rot,iw,ih){
   const r=rot||0;
-  const fw=((r%180===90)?def.h:def.w)*SC;
-  const fh=((r%180===90)?def.w:def.h)*SC;
-  const SNAP=5;
+  const bw=iw||def.w, bh=ih||def.h;
+  const fw=((r%180===90)?bh:bw)*SC;
+  const fh=((r%180===90)?bw:bh)*SC;
+  const SNAP=16;
   let sx=x,sy=y;
   // Perimeter wall inner faces
-  if(Math.abs(x-W_PX)<SNAP)               sx=W_PX;
-  if(Math.abs(x+fw-(W_PX+IPW))<SNAP)      sx=W_PX+IPW-fw;
-  if(Math.abs(y-W_PX)<SNAP)               sy=W_PX;
-  if(Math.abs(y+fh-(W_PX+IPH))<SNAP)      sy=W_PX+IPH-fh;
+  if(Math.abs(x-W_PX)<=SNAP)               sx=W_PX;
+  if(Math.abs(x+fw-(W_PX+IPW))<=SNAP)      sx=W_PX+IPW-fw;
+  if(Math.abs(y-W_PX)<=SNAP)               sy=W_PX;
+  if(Math.abs(y+fh-(W_PX+IPH))<=SNAP)      sy=W_PX+IPH-fh;
   // Interior walls (floorLines)
   for(const ln of floorLines){
-    if(ln.y1===ln.y2){ // horizontal wall
+    if(ln.y1===ln.y2){
       const wy=ln.y1;
-      if(Math.abs(y-(wy+W_PX/2))<SNAP)        sy=wy+W_PX/2;
-      if(Math.abs(y+fh-(wy-W_PX/2))<SNAP)     sy=wy-W_PX/2-fh;
-    } else {            // vertical wall
+      if(Math.abs(y-(wy+W_PX/2))<=SNAP)        sy=wy+W_PX/2;
+      if(Math.abs(y+fh-(wy-W_PX/2))<=SNAP)     sy=wy-W_PX/2-fh;
+    } else {
       const wx=ln.x1;
-      if(Math.abs(x-(wx+W_PX/2))<SNAP)        sx=wx+W_PX/2;
-      if(Math.abs(x+fw-(wx-W_PX/2))<SNAP)     sx=wx-W_PX/2-fw;
+      if(Math.abs(x-(wx+W_PX/2))<=SNAP)        sx=wx+W_PX/2;
+      if(Math.abs(x+fw-(wx-W_PX/2))<=SNAP)     sx=wx-W_PX/2-fw;
     }
   }
   return{x:sx,y:sy};
@@ -114,16 +116,20 @@ ca.addEventListener('mousemove',ev=>{
 ca.addEventListener('mouseup',()=>{isPanning=false;if(spaceDown){ca.style.cursor='grab';document.body.style.cursor='grab';}});
 
 // ── SVG DRAWING EVENTS ──
+let _svgAbort=null;
 function bindSvgEvents(){
-  svg.addEventListener('mousedown',onSvgDown);
-  svg.addEventListener('mousemove',onSvgMove);
-  svg.addEventListener('mouseup',onSvgUp);
+  if(_svgAbort)_svgAbort.abort();
+  _svgAbort=new AbortController();
+  const sig={signal:_svgAbort.signal};
+  svg.addEventListener('mousedown',onSvgDown,sig);
+  svg.addEventListener('mousemove',onSvgMove,sig);
+  svg.addEventListener('mouseup',onSvgUp,sig);
   // Click on background (nothing stopped propagation) → deselect
   svg.addEventListener('click',()=>{
     if(selLine!==null||selFurn!==null||selOpening!==null){
       selLine=null;selFurn=null;selOpening=null;render();
     }
-  });
+  },sig);
 }
 
 function onSvgDown(ev){
@@ -197,10 +203,26 @@ function onSvgMove(ev){
     if(old)old.remove();
     renderLines(false);
   }
+  if(dragFurnResize){
+    const pt=svgPt(ev);
+    const f=furniture.find(f=>f.id===dragFurnResize.id);
+    if(f){
+      if(dragFurnResize.axis==='w'){
+        const delta=(pt.x-dragFurnResize.startVal)/SC;
+        f.w=Math.max(1,Math.min(Math.round(dragFurnResize.startW+delta),(W_PX+IPW-f.x)/SC));
+      } else {
+        const delta=(pt.y-dragFurnResize.startVal)/SC;
+        f.h=Math.max(1,Math.min(Math.round(dragFurnResize.startH+delta),(W_PX+IPH-f.y)/SC));
+      }
+    }
+    const old=document.getElementById('furn-g');
+    if(old)old.remove();
+    renderFurniture(false);
+  }
   if(dragFurn){
     const pt=svgPt(ev);
     const f=furniture.find(f=>f.id===dragFurn.id);
-    if(f){const def=FURN[f.type];let c=clampFurn(pt.x-dragFurn.ox,pt.y-dragFurn.oy,def,f.rot);if(def.wallSnap)c=snapFurnToWalls(c.x,c.y,def,f.rot);f.x=c.x;f.y=c.y;}
+    if(f){const def=FURN[f.type];let c=clampFurn(pt.x-dragFurn.ox,pt.y-dragFurn.oy,def,f.rot,f.w,f.h);if(def.wallSnap)c=snapFurnToWalls(c.x,c.y,def,f.rot,f.w,f.h);f.x=c.x;f.y=c.y;}
     const old=document.getElementById('furn-g');
     if(old)old.remove();
     renderFurniture(false);
@@ -223,6 +245,7 @@ function onSvgUp(ev){
   }
   if(dragOpening){saveHistory();dragOpening=null; render();}
   if(dragFurn){saveHistory();dragFurn=null; render();}
+  if(dragFurnResize){saveHistory();dragFurnResize=null; render();}
 }
 
 // ── FURNITURE DRAG & DROP ──
@@ -242,8 +265,9 @@ svg.addEventListener('contextmenu',ev=>{
   const pt=svgPt(ev);
   const deg=ev.altKey?45:90;
   furniture.forEach(f=>{
-    const def=FURN[f.type];if(!def)return;
-    if(pt.x>=f.x&&pt.x<=f.x+def.w*SC&&pt.y>=f.y&&pt.y<=f.y+def.h*SC){
+    const def=FURN[f.type];if(!def||def.noRotate)return;
+    const iw=f.w||def.w, ih=f.h||def.h;
+    if(pt.x>=f.x&&pt.x<=f.x+iw*SC&&pt.y>=f.y&&pt.y<=f.y+ih*SC){
       f.rot=((f.rot||0)+deg)%360; render();
     }
   });
