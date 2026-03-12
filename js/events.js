@@ -9,32 +9,47 @@ function clampI(pt){return{x:Math.max(W_PX,Math.min(W_PX+IPW,pt.x)),y:Math.max(W
 function clampFurn(x,y,def,rot,iw,ih){
   const r=rot||0;
   const bw=iw||def.w, bh=ih||def.h;
-  const w=(r%180===90)?bh:bw;
-  const h=(r%180===90)?bw:bh;
-  return{x:Math.max(W_PX,Math.min(W_PX+IPW-w*SC,x)),y:Math.max(W_PX,Math.min(W_PX+IPH-h*SC,y))};
+  const pw=bw*SC, ph=bh*SC;
+  if(r%180===90){
+    // SVG rotates around the original center, so the visual box is offset from (x,y):
+    // visual left = x + (pw-ph)/2,  visual width  = ph
+    // visual top  = y + (ph-pw)/2,  visual height = pw
+    const offX=(pw-ph)/2, offY=(ph-pw)/2;
+    return{
+      x:Math.max(W_PX-offX, Math.min(W_PX+IPW-offX-ph, x)),
+      y:Math.max(W_PX-offY, Math.min(W_PX+IPH-offY-pw, y))
+    };
+  }
+  return{x:Math.max(W_PX,Math.min(W_PX+IPW-pw,x)),y:Math.max(W_PX,Math.min(W_PX+IPH-ph,y))};
 }
 function snapFurnToWalls(x,y,def,rot,iw,ih){
   const r=rot||0;
   const bw=iw||def.w, bh=ih||def.h;
-  const fw=((r%180===90)?bh:bw)*SC;
-  const fh=((r%180===90)?bw:bh)*SC;
+  const pw=bw*SC, ph=bh*SC;
+  const rotated=r%180===90;
+  const fw=rotated?ph:pw;
+  const fh=rotated?pw:ph;
+  // Visual box offset when rotated (same logic as clampFurn)
+  const offX=rotated?(pw-ph)/2:0;
+  const offY=rotated?(ph-pw)/2:0;
   const SNAP=16;
   let sx=x,sy=y;
+  const vL=x+offX, vR=x+offX+fw, vT=y+offY, vB=y+offY+fh;
   // Perimeter wall inner faces
-  if(Math.abs(x-W_PX)<=SNAP)               sx=W_PX;
-  if(Math.abs(x+fw-(W_PX+IPW))<=SNAP)      sx=W_PX+IPW-fw;
-  if(Math.abs(y-W_PX)<=SNAP)               sy=W_PX;
-  if(Math.abs(y+fh-(W_PX+IPH))<=SNAP)      sy=W_PX+IPH-fh;
+  if(Math.abs(vL-W_PX)<=SNAP)               sx=W_PX-offX;
+  if(Math.abs(vR-(W_PX+IPW))<=SNAP)         sx=W_PX+IPW-offX-fw;
+  if(Math.abs(vT-W_PX)<=SNAP)               sy=W_PX-offY;
+  if(Math.abs(vB-(W_PX+IPH))<=SNAP)         sy=W_PX+IPH-offY-fh;
   // Interior walls (floorLines)
   for(const ln of floorLines){
     if(ln.y1===ln.y2){
       const wy=ln.y1;
-      if(Math.abs(y-(wy+W_PX/2))<=SNAP)        sy=wy+W_PX/2;
-      if(Math.abs(y+fh-(wy-W_PX/2))<=SNAP)     sy=wy-W_PX/2-fh;
+      if(Math.abs(vT-(wy+W_PX/2))<=SNAP)    sy=wy+W_PX/2-offY;
+      if(Math.abs(vB-(wy-W_PX/2))<=SNAP)    sy=wy-W_PX/2-offY-fh;
     } else {
       const wx=ln.x1;
-      if(Math.abs(x-(wx+W_PX/2))<=SNAP)        sx=wx+W_PX/2;
-      if(Math.abs(x+fw-(wx-W_PX/2))<=SNAP)     sx=wx-W_PX/2-fw;
+      if(Math.abs(vL-(wx+W_PX/2))<=SNAP)    sx=wx+W_PX/2-offX;
+      if(Math.abs(vR-(wx-W_PX/2))<=SNAP)    sx=wx-W_PX/2-offX-fw;
     }
   }
   return{x:sx,y:sy};
