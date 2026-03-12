@@ -161,16 +161,33 @@ const FURN={
       const w=(iw||this.w)*s, h=(ih||this.h)*s;
       const d=s*0.5; // 6" diamond diagonal
       const r=d/2;
+      // Per-instance clipPath so diamonds never overflow the bounds
+      const fid=g.getAttribute('data-fid')||'sh0';
+      const clipId='sh-clip-'+fid;
+      const defs=document.querySelector('#fp-svg defs');
+      if(defs){
+        const old=document.getElementById(clipId);
+        if(old)old.remove();
+        const cp=document.createElementNS(NS,'clipPath');
+        cp.setAttribute('id',clipId);
+        const cr=document.createElementNS(NS,'rect');
+        cr.setAttribute('x',0);cr.setAttribute('y',0);
+        cr.setAttribute('width',w);cr.setAttribute('height',h);
+        cp.appendChild(cr);
+        defs.appendChild(cp);
+      }
       // Base fill
       g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#e4eff4',stroke:'none',rx:1}));
-      // Diamond grid — centers at (r+i*d, r+j*d), protrusions covered by border rect below
+      // Diamond grid clipped to bounds
+      const pg=e('g',{'clip-path':`url(#${clipId})`});
       for(let j=0;r+j*d<h+r;j++){
         for(let i=0;r+i*d<w+r;i++){
           const cx=r+i*d, cy=r+j*d;
-          g.appendChild(e('path',{d:`M${cx},${cy-r} L${cx+r},${cy} L${cx},${cy+r} L${cx-r},${cy} Z`,fill:'none',stroke:'#7aafbe','stroke-width':.65}));
+          pg.appendChild(e('path',{d:`M${cx},${cy-r} L${cx+r},${cy} L${cx},${cy+r} L${cx-r},${cy} Z`,fill:'none',stroke:'#7aafbe','stroke-width':.65}));
         }
       }
-      // Border on top — covers any partial diamonds at edges, shows selection state
+      g.appendChild(pg);
+      // Border
       g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'none',stroke:sel?'#c4853a':'#5a9ab0','stroke-width':sel?1.8:1,rx:1}));
     }},
   dishwasher:{label:'Dishwasher',w:2,h:2,
