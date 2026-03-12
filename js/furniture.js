@@ -104,13 +104,13 @@ const FURN={
       g.appendChild(e('ellipse',{cx:w/2,cy:h/2,rx:w/2-4,ry:h/2-4,fill:'#c8dde8',stroke:'#70a0a0','stroke-width':.8}));
       g.appendChild(e('circle',{cx:w/2,cy:h/2,r:2,fill:'#90b0b8'}));
     }},
-  range:{label:'Range',w:2.5,h:2.5,
+  range:{label:'Range',w:2.5,h:2.08,
     draw(g,s,sel){
       const w=this.w*s,h=this.h*s;
       g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#d0c8c0',stroke:sel?'#c4853a':'#806858','stroke-width':sel?1.8:1}));
-      [[.25,.25],[.75,.25],[.25,.75],[.75,.75]].forEach(([fx,fy])=>{
-        g.appendChild(e('circle',{cx:w*fx,cy:h*fy,r:w*.16,fill:'#a09080',stroke:'#706050','stroke-width':.8}));
-        g.appendChild(e('circle',{cx:w*fx,cy:h*fy,r:w*.07,fill:'#504038'}));
+      [[.25,.28],[.75,.28],[.25,.75],[.75,.75]].forEach(([fx,fy])=>{
+        g.appendChild(e('circle',{cx:w*fx,cy:h*fy,r:w*.13,fill:'#a09080',stroke:'#706050','stroke-width':.8}));
+        g.appendChild(e('circle',{cx:w*fx,cy:h*fy,r:w*.055,fill:'#504038'}));
       });
     }},
   bookcase:{label:'Bookcase',w:3,h:1,
