@@ -58,6 +58,10 @@ document.addEventListener('keydown',ev=>{
   if(ev.code==='Space'&&!ev.repeat){
     spaceDown=true; ca.style.cursor='grab'; document.body.style.cursor='grab'; ev.preventDefault();
   }
+  if(ev.key==='f'){setTool('floor-line');return;}
+  if(ev.key==='s'){setTool('select');return;}
+  if(ev.key==='d'){addOpening(OPENING_STD);return;}
+  if(ev.key==='p'){addOpening(OPENING_POCKET);return;}
   if(ev.key==='Escape'){
     drawLine=null; snapIndicator=null; hoverEndpoint=null;
     selLine=null; selFurn=null; selOpening=null;
