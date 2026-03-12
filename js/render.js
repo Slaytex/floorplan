@@ -194,12 +194,6 @@ function renderFurniture(showSelection = true){
     const fg=e('g',{transform:`translate(${f.x},${f.y}) rotate(${f.rot||0},${pw/2},${ph/2})`,'data-fid':f.id});
     const sel=f.id===selFurn;
     def.draw(fg,SC,sel,iw,ih);
-    if(def.sizeModal){
-      const dot=e('circle',{cx:pw/2,cy:ph/2,r:4,fill:'#9a8a7a',stroke:'#fdfaf4','stroke-width':1,opacity:.85});
-      dot.style.cursor='pointer';
-      dot.addEventListener('click',ev=>{ev.stopPropagation();showCounterModal(f,f.x+pw/2,f.y+ph/2);});
-      fg.appendChild(dot);
-    }
     if(showSelection&&sel){
       fg.appendChild(e('rect',{x:-2,y:-2,width:pw+4,height:ph+4,fill:'none',stroke:'#c4853a','stroke-width':1.5,'stroke-dasharray':'4,2',rx:2}));
       if(def.resizable){
@@ -221,11 +215,20 @@ function renderFurniture(showSelection = true){
         fg.appendChild(sh);
       }
     }
+    // Hit area covers the body (below dot in paint order so dot stays clickable)
     const hit=e('rect',{x:0,y:0,width:pw,height:ph,fill:'transparent',stroke:'none'});
     hit.style.cursor='move';
     hit.addEventListener('mousedown',ev=>onFurnDown(ev,f.id));
     hit.addEventListener('click',ev=>ev.stopPropagation());
     fg.appendChild(hit);
+    // Dot on top — must be last so it receives pointer events
+    if(def.sizeModal){
+      const dot=e('circle',{cx:pw/2,cy:ph/2,r:5,fill:'#9a8a7a',stroke:'#fdfaf4','stroke-width':1.2,opacity:.9});
+      dot.style.cursor='pointer';
+      dot.addEventListener('mousedown',ev=>ev.stopPropagation());
+      dot.addEventListener('click',ev=>{ev.stopPropagation();showCounterModal(f,f.x+pw/2,f.y+ph/2);});
+      fg.appendChild(dot);
+    }
     g.appendChild(fg);
   });
   svg.appendChild(g);

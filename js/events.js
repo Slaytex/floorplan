@@ -207,12 +207,31 @@ function onSvgMove(ev){
     const pt=svgPt(ev);
     const f=furniture.find(f=>f.id===dragFurnResize.id);
     if(f){
+      const SNAP=16;
       if(dragFurnResize.axis==='w'){
-        const delta=(pt.x-dragFurnResize.startVal)/SC;
-        f.w=Math.max(1,Math.min(Math.round(dragFurnResize.startW+delta),(W_PX+IPW-f.x)/SC));
+        let newW=Math.max(0.5,dragFurnResize.startW+(pt.x-dragFurnResize.startVal)/SC);
+        const rPx=f.x+newW*SC;
+        // Snap right edge to perimeter and interior vertical walls
+        if(Math.abs(rPx-(W_PX+IPW))<=SNAP) newW=(W_PX+IPW-f.x)/SC;
+        else for(const ln of floorLines){
+          if(ln.x1===ln.x2){
+            if(Math.abs(rPx-(ln.x1-W_PX/2))<=SNAP){newW=(ln.x1-W_PX/2-f.x)/SC;break;}
+            if(Math.abs(rPx-(ln.x1+W_PX/2))<=SNAP){newW=(ln.x1+W_PX/2-f.x)/SC;break;}
+          }
+        }
+        f.w=Math.max(0.5,Math.min(newW,(W_PX+IPW-f.x)/SC));
       } else {
-        const delta=(pt.y-dragFurnResize.startVal)/SC;
-        f.h=Math.max(1,Math.min(Math.round(dragFurnResize.startH+delta),(W_PX+IPH-f.y)/SC));
+        let newH=Math.max(0.5,dragFurnResize.startH+(pt.y-dragFurnResize.startVal)/SC);
+        const bPx=f.y+newH*SC;
+        // Snap bottom edge to perimeter and interior horizontal walls
+        if(Math.abs(bPx-(W_PX+IPH))<=SNAP) newH=(W_PX+IPH-f.y)/SC;
+        else for(const ln of floorLines){
+          if(ln.y1===ln.y2){
+            if(Math.abs(bPx-(ln.y1-W_PX/2))<=SNAP){newH=(ln.y1-W_PX/2-f.y)/SC;break;}
+            if(Math.abs(bPx-(ln.y1+W_PX/2))<=SNAP){newH=(ln.y1+W_PX/2-f.y)/SC;break;}
+          }
+        }
+        f.h=Math.max(0.5,Math.min(newH,(W_PX+IPH-f.y)/SC));
       }
     }
     const old=document.getElementById('furn-g');
