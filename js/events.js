@@ -178,9 +178,12 @@ function onSvgUp(ev){
     drawLine=null; snapIndicator=null; render();
   }
   if(dragWall){
-    saveHistory();
     const ln=floorLines.find(l=>l.id===dragWall.id);
-    if(ln) clampOpenings(ln);
+    if(ln){
+      const moved=dragWall.type!=='move'||(ln.x1!==dragWall.ox1||ln.y1!==dragWall.oy1);
+      if(moved) saveHistory();
+      clampOpenings(ln);
+    }
     dragWall=null; snapIndicator=null; render();
   }
   if(dragOpening){saveHistory();dragOpening=null; render();}

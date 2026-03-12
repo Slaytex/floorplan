@@ -75,11 +75,15 @@ function renderWallBody(g, ln, sel, showHandles){
 
   // Transparent hit area for selecting the wall
   const hit=e('rect',{...r,fill:'transparent',stroke:'none'});
-  hit.style.cursor='pointer';
-  hit.addEventListener('click',ev=>{
+  hit.style.cursor='move';
+  hit.addEventListener('mousedown',ev=>{
     ev.stopPropagation();
-    selLine=(selLine===ln.id)?null:ln.id;selOpening=null;render();
+    selLine=ln.id; selOpening=null;
+    const pt=svgPt(ev);
+    dragWall={id:ln.id,type:'move',startX:pt.x,startY:pt.y,ox1:ln.x1,oy1:ln.y1,ox2:ln.x2,oy2:ln.y2};
+    render();
   });
+  hit.addEventListener('click',ev=>ev.stopPropagation());
   g.appendChild(hit);
 
   // Length label
