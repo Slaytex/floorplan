@@ -127,7 +127,7 @@ function handleRemoteCursor(msg){
     el.innerHTML = `
       <div style="position:relative;">
         <div style="width:10px;height:10px;border-radius:50%;background:${color};border:2px solid #1c1a17;position:absolute;top:-5px;left:-5px;"></div>
-        <div style="position:absolute;left:8px;top:-10px;background:${color};color:#1a1614;font-family:DM Mono,monospace;font-size:10px;font-weight:500;padding:2px 8px;border-radius:8px;white-space:nowrap;opacity:0.95;">${msg.name || 'User'}</div>
+        <div style="position:absolute;left:8px;top:-10px;background:#252220;color:#afa9a1;font-family:DM Mono,monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px;border-radius:6px;white-space:nowrap;display:flex;align-items:center;justify-content:center;border:1px solid #3a3630;">${msg.name || 'User'}</div>
       </div>`;
     _cursorOverlay.appendChild(el);
     cursor = {name: msg.name, x: msg.x, y: msg.y, color, el};
