@@ -124,11 +124,7 @@ function handleRemoteCursor(msg){
     const color = _colorForId(msg.id);
     const el = document.createElement('div');
     el.style.cssText = 'position:absolute;pointer-events:none;';
-    el.innerHTML = `
-      <div style="position:relative;">
-        <div style="width:10px;height:10px;border-radius:50%;background:${color};border:2px solid #1c1a17;position:absolute;top:-5px;left:-5px;"></div>
-        <div style="position:absolute;left:8px;top:-10px;background:#252220;color:#afa9a1;font-family:DM Mono,monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px;border-radius:6px;white-space:nowrap;display:flex;align-items:center;justify-content:center;border:1px solid #3a3630;">${msg.name || 'User'}</div>
-      </div>`;
+    el.innerHTML = `<div style="position:relative;"><div style="width:10px;height:10px;border-radius:50%;background:${color};border:2px solid #1c1a17;position:absolute;top:-5px;left:-5px;"></div><div data-lbl style="position:absolute;left:8px;top:-10px;background:#252220;color:#afa9a1;font-family:DM Mono,monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px;border-radius:6px;white-space:nowrap;display:flex;align-items:center;justify-content:center;border:1px solid #3a3630;">${msg.name || 'User'}</div></div>`;
     _cursorOverlay.appendChild(el);
     cursor = {name: msg.name, x: msg.x, y: msg.y, color, el};
     _remoteCursors.set(msg.id, cursor);
@@ -136,7 +132,7 @@ function handleRemoteCursor(msg){
     cursor.name = msg.name;
     cursor.x    = msg.x;
     cursor.y    = msg.y;
-    const label = cursor.el.querySelector('div > div:last-child');
+    const label = cursor.el.querySelector('[data-lbl]');
     if(label && label.textContent !== msg.name) label.textContent = msg.name || 'User';
   }
   positionCursor(cursor);
