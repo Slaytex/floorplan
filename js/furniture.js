@@ -142,6 +142,20 @@ const FURN={
       const t=e('text',{x:w/2,y:h/2+3,fill:'#505050','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
       t.textContent='fridge';g.appendChild(t);
     }},
+  counter:{label:'Counter 4′',w:4,h:2,wallSnap:true,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      const ts=0.5*s; // 6" tile = 0.5ft
+      // Base fill
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#ddd8c8',stroke:sel?'#c4853a':'#8a7860','stroke-width':sel?1.8:1,rx:1}));
+      // Tile grout lines
+      for(let x=ts;x<w;x+=ts)
+        g.appendChild(e('line',{x1:x,y1:0,x2:x,y2:h,stroke:'#b8b0a0','stroke-width':.6}));
+      for(let y=ts;y<h;y+=ts)
+        g.appendChild(e('line',{x1:0,y1:y,x2:w,y2:y,stroke:'#b8b0a0','stroke-width':.6}));
+      // Countertop edge highlight
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:3,fill:'#ede8dc',stroke:'none'}));
+    }},
   dishwasher:{label:'Dishwasher',w:2,h:2,
     draw(g,s,sel){
       const w=this.w*s,h=this.h*s;

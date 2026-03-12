@@ -12,6 +12,31 @@ function clampFurn(x,y,def,rot){
   const h=(r%180===90)?def.w:def.h;
   return{x:Math.max(W_PX,Math.min(W_PX+IPW-w*SC,x)),y:Math.max(W_PX,Math.min(W_PX+IPH-h*SC,y))};
 }
+function snapFurnToWalls(x,y,def,rot){
+  const r=rot||0;
+  const fw=((r%180===90)?def.h:def.w)*SC;
+  const fh=((r%180===90)?def.w:def.h)*SC;
+  const SNAP=5;
+  let sx=x,sy=y;
+  // Perimeter wall inner faces
+  if(Math.abs(x-W_PX)<SNAP)               sx=W_PX;
+  if(Math.abs(x+fw-(W_PX+IPW))<SNAP)      sx=W_PX+IPW-fw;
+  if(Math.abs(y-W_PX)<SNAP)               sy=W_PX;
+  if(Math.abs(y+fh-(W_PX+IPH))<SNAP)      sy=W_PX+IPH-fh;
+  // Interior walls (floorLines)
+  for(const ln of floorLines){
+    if(ln.y1===ln.y2){ // horizontal wall
+      const wy=ln.y1;
+      if(Math.abs(y-(wy+W_PX/2))<SNAP)        sy=wy+W_PX/2;
+      if(Math.abs(y+fh-(wy-W_PX/2))<SNAP)     sy=wy-W_PX/2-fh;
+    } else {            // vertical wall
+      const wx=ln.x1;
+      if(Math.abs(x-(wx+W_PX/2))<SNAP)        sx=wx+W_PX/2;
+      if(Math.abs(x+fw-(wx-W_PX/2))<SNAP)     sx=wx-W_PX/2-fw;
+    }
+  }
+  return{x:sx,y:sy};
+}
 function snapI(v){return Math.round((v-W_PX)/SC)*SC+W_PX;}
 function findSnapEndpoint(x,y,excludeId=null){
   for(const ln of floorLines){
@@ -175,7 +200,7 @@ function onSvgMove(ev){
   if(dragFurn){
     const pt=svgPt(ev);
     const f=furniture.find(f=>f.id===dragFurn.id);
-    if(f){const c=clampFurn(pt.x-dragFurn.ox,pt.y-dragFurn.oy,FURN[f.type],f.rot);f.x=c.x;f.y=c.y;}
+    if(f){const def=FURN[f.type];let c=clampFurn(pt.x-dragFurn.ox,pt.y-dragFurn.oy,def,f.rot);if(def.wallSnap)c=snapFurnToWalls(c.x,c.y,def,f.rot);f.x=c.x;f.y=c.y;}
     const old=document.getElementById('furn-g');
     if(old)old.remove();
     renderFurniture(false);
@@ -231,7 +256,8 @@ ca.addEventListener('drop',ev=>{
   if(!type||!FURN[type])return;
   const def=FURN[type];
   const raw=svgPt(ev);
-  const c=clampFurn(raw.x-def.w*SC/2,raw.y-def.h*SC/2,def,0);
+  let c=clampFurn(raw.x-def.w*SC/2,raw.y-def.h*SC/2,def,0);
+  if(def.wallSnap) c=snapFurnToWalls(c.x,c.y,def,0);
   furniture.push({id:crypto.randomUUID(),type,x:c.x,y:c.y,rot:0});
   render();
 });
