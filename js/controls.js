@@ -61,11 +61,19 @@ function addOpening(width=OPENING_STD){
   if(wallLen<width+8){setStatus(`Wall too short for a ${Math.round(width/SC*12)}″ opening`);return;}
   saveHistory();
   if(!ln.openings) ln.openings=[];
-  const offset=(wallLen-width)/2; // center it
-  ln.openings.push({id:crypto.randomUUID(),offset,width});
-  selOpening={lineId:ln.id,openingId:ln.openings[ln.openings.length-1].id};
+  // If an opening on this wall is already selected, replace it rather than stack a new one
+  const existing=selOpening&&selOpening.lineId===ln.id
+    ?ln.openings.find(o=>o.id===selOpening.openingId):null;
+  if(existing){
+    existing.width=width;
+    existing.offset=Math.max(0,Math.min(wallLen-width,existing.offset));
+  } else {
+    const offset=(wallLen-width)/2;
+    ln.openings.push({id:crypto.randomUUID(),offset,width});
+    selOpening={lineId:ln.id,openingId:ln.openings[ln.openings.length-1].id};
+  }
   render();
-  setStatus(`${Math.round(width/SC*12)}″ opening added — drag to reposition`);
+  setStatus(`${Math.round(width/SC*12)}″ opening — drag to reposition`);
 }
 function clearLines(){if(confirm('Clear all interior walls?')){saveHistory();floorLines=[];selLine=null;selOpening=null;render();}}
 function resetPlan(){
