@@ -241,7 +241,7 @@ function onSvgMove(ev){
   if(dragFurn){
     const pt=svgPt(ev);
     const f=furniture.find(f=>f.id===dragFurn.id);
-    if(f){const def=FURN[f.type];let c=clampFurn(pt.x-dragFurn.ox,pt.y-dragFurn.oy,def,f.rot,f.w,f.h);if(def.wallSnap)c=snapFurnToWalls(c.x,c.y,def,f.rot,f.w,f.h);f.x=c.x;f.y=c.y;}
+    if(f){const def=FURN[f.type];const c=clampFurn(pt.x-dragFurn.ox,pt.y-dragFurn.oy,def,f.rot,f.w,f.h);f.x=c.x;f.y=c.y;}
     const old=document.getElementById('furn-g');
     if(old)old.remove();
     renderFurniture(false);
@@ -263,7 +263,11 @@ function onSvgUp(ev){
     dragWall=null; snapIndicator=null; render();
   }
   if(dragOpening){saveHistory();dragOpening=null; render();}
-  if(dragFurn){saveHistory();dragFurn=null; render();}
+  if(dragFurn){
+    const f=furniture.find(f=>f.id===dragFurn.id);
+    if(f){const def=FURN[f.type];if(def.wallSnap){const c=snapFurnToWalls(f.x,f.y,def,f.rot,f.w,f.h);f.x=c.x;f.y=c.y;}}
+    saveHistory();dragFurn=null;render();
+  }
   if(dragFurnResize){saveHistory();dragFurnResize=null; render();}
 }
 
