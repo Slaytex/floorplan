@@ -6,6 +6,12 @@ function svgPt(ev){
 }
 function snap(v){return Math.round(v/SC)*SC;}
 function clampI(pt){return{x:Math.max(W_PX,Math.min(W_PX+IPW,pt.x)),y:Math.max(W_PX,Math.min(W_PX+IPH,pt.y))};}
+function clampFurn(x,y,def,rot){
+  const r=rot||0;
+  const w=(r%180===90)?def.h:def.w;
+  const h=(r%180===90)?def.w:def.h;
+  return{x:Math.max(W_PX,Math.min(W_PX+IPW-w*SC,x)),y:Math.max(W_PX,Math.min(W_PX+IPH-h*SC,y))};
+}
 function snapI(v){return Math.round((v-W_PX)/SC)*SC+W_PX;}
 function findSnapEndpoint(x,y,excludeId=null){
   for(const ln of floorLines){
@@ -159,7 +165,7 @@ function onSvgMove(ev){
   if(dragFurn){
     const pt=svgPt(ev);
     const f=furniture.find(f=>f.id===dragFurn.id);
-    if(f){f.x=pt.x-dragFurn.ox;f.y=pt.y-dragFurn.oy;}
+    if(f){const c=clampFurn(pt.x-dragFurn.ox,pt.y-dragFurn.oy,FURN[f.type],f.rot);f.x=c.x;f.y=c.y;}
     const old=document.getElementById('furn-g');
     if(old)old.remove();
     renderFurniture(false);
@@ -210,10 +216,9 @@ ca.addEventListener('drop',ev=>{
   ev.preventDefault();
   const type=ev.dataTransfer.getData('ftype');
   if(!type||!FURN[type])return;
-  const r=svg.getBoundingClientRect();
   const def=FURN[type];
-  const x=ev.clientX-r.left-def.w*SC/2;
-  const y=ev.clientY-r.top-def.h*SC/2;
-  furniture.push({id:crypto.randomUUID(),type,x,y,rot:0});
+  const raw=svgPt(ev);
+  const c=clampFurn(raw.x-def.w*SC/2,raw.y-def.h*SC/2,def,0);
+  furniture.push({id:crypto.randomUUID(),type,x:c.x,y:c.y,rot:0});
   render();
 });

@@ -78,7 +78,7 @@ function renderWallBody(g, ln, sel, showHandles){
   hit.style.cursor='pointer';
   hit.addEventListener('click',ev=>{
     ev.stopPropagation();
-    if(tool==='select'){selLine=(selLine===ln.id)?null:ln.id;selOpening=null;render();}
+    selLine=(selLine===ln.id)?null:ln.id;selOpening=null;render();
   });
   g.appendChild(hit);
 
@@ -376,6 +376,7 @@ function drawResizeButtons(){
     const hov=label==='+'?'#5a7e5e':'#7e4a4a';
     g.addEventListener('mouseenter',()=>c.setAttribute('fill',hov));
     g.addEventListener('mouseleave',()=>c.setAttribute('fill',fill));
+    g.addEventListener('mousedown',ev=>ev.stopPropagation());
     g.addEventListener('click',ev=>{ev.stopPropagation();resizePlan(dir);});
     return g;
   }
