@@ -98,6 +98,44 @@ function renderWallBody(g, ln, sel, showHandles){
     const opSel=selOpening&&selOpening.lineId===ln.id&&selOpening.openingId===op.id;
     const cOff=Math.max(0,Math.min(wallLen-op.width,op.offset));
     const bk='#c8b080';
+
+    // ── Sliding (bypass) door — fill wall gap with two overlapping panel lines ──
+    if(op.type==='sliding'){
+      const pw=op.width*0.65; // each panel = 65% of total width
+      const selFill='rgba(196,133,58,.15)', selStroke='#c4853a';
+      if(horiz){
+        const ox=r.x+cOff, oy=r.y, ow=op.width, oh=r.height;
+        // Panel A (front, upper track)
+        g.appendChild(e('rect',{x:ox,y:oy+oh*.18,width:pw,height:oh*.3,
+          fill:COL_DOOR_FILL,stroke:opSel?selStroke:'#8a7a6a','stroke-width':opSel?1.2:.7}));
+        // Panel B (behind, lower track)
+        g.appendChild(e('rect',{x:ox+ow-pw,y:oy+oh*.52,width:pw,height:oh*.3,
+          fill:COL_DOOR_FILL,stroke:opSel?selStroke:'#8a7a6a','stroke-width':opSel?1.2:.7}));
+        // Transparent hit area (select/delete)
+        const hit=e('rect',{x:ox,y:oy,width:ow,height:oh,
+          fill:opSel?selFill:'transparent',stroke:'none'});
+        hit.style.cursor='pointer';
+        hit.addEventListener('mousedown',ev=>{ev.stopPropagation();selOpening={lineId:ln.id,openingId:op.id};render();});
+        hit.addEventListener('click',ev=>ev.stopPropagation());
+        g.appendChild(hit);
+      } else {
+        const ox=r.x, oy=r.y+cOff, ow=r.width, oh=op.width;
+        // Panel A (front, left track)
+        g.appendChild(e('rect',{x:ox+ow*.18,y:oy,width:ow*.3,height:pw,
+          fill:COL_DOOR_FILL,stroke:opSel?selStroke:'#8a7a6a','stroke-width':opSel?1.2:.7}));
+        // Panel B (behind, right track)
+        g.appendChild(e('rect',{x:ox+ow*.52,y:oy+oh-pw,width:ow*.3,height:pw,
+          fill:COL_DOOR_FILL,stroke:opSel?selStroke:'#8a7a6a','stroke-width':opSel?1.2:.7}));
+        const hit=e('rect',{x:ox,y:oy,width:ow,height:oh,
+          fill:opSel?selFill:'transparent',stroke:'none'});
+        hit.style.cursor='pointer';
+        hit.addEventListener('mousedown',ev=>{ev.stopPropagation();selOpening={lineId:ln.id,openingId:op.id};render();});
+        hit.addEventListener('click',ev=>ev.stopPropagation());
+        g.appendChild(hit);
+      }
+      continue;
+    }
+
     if(horiz){
       const ox=r.x+cOff, oy=r.y;
       g.appendChild(e('line',{x1:ox,y1:oy-3,x2:ox,y2:oy+r.height+3,stroke:bk,'stroke-width':2.5}));

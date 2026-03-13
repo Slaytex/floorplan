@@ -112,6 +112,7 @@ document.addEventListener('keydown',ev=>{
   if(ev.key==='s'){setTool('select');return;}
   if(ev.key==='d'){addOpening(OPENING_STD);return;}
   if(ev.key==='p'){addOpening(OPENING_POCKET);return;}
+  if(ev.key==='c'||ev.key==='C'){addSlidingDoor();return;}
   if(ev.key==='Escape'){
     drawLine=null; snapIndicator=null; hoverEndpoint=null;
     selLine=null; selFurn=null; selOpening=null;

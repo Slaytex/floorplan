@@ -75,6 +75,20 @@ function addOpening(width=OPENING_STD){
   render();
   setStatus(`${Math.round(width/SC*12)}″ opening — drag to reposition`);
 }
+function addSlidingDoor(){
+  if(selLine===null){setStatus('Select a wall first, then add sliding door');return;}
+  const ln=floorLines.find(l=>l.id===selLine);
+  if(!ln)return;
+  const wallLen=Math.abs(ln.x2-ln.x1)+Math.abs(ln.y2-ln.y1);
+  saveHistory();
+  if(!ln.openings) ln.openings=[];
+  // Only one sliding door per wall — replace if already present
+  ln.openings=ln.openings.filter(o=>o.type!=='sliding');
+  ln.openings.push({id:crypto.randomUUID(),offset:0,width:wallLen,type:'sliding'});
+  selOpening={lineId:ln.id,openingId:ln.openings[ln.openings.length-1].id};
+  render();
+  setStatus('Sliding door — full wall width');
+}
 function clearLines(){if(confirm('Clear all interior walls?')){saveHistory();floorLines=[];selLine=null;selOpening=null;render();}}
 function resetPlan(){
   if(!confirm('Reset entire plan?'))return;
