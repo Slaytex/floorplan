@@ -154,11 +154,40 @@ function renderWallBody(g, ln, sel, showHandles){
   }
 }
 
+// Fill the W_PX×W_PX square at every perpendicular wall junction to eliminate corner gaps
+function drawJunctions(g){
+  const seen=new Set();
+  for(let i=0;i<floorLines.length;i++){
+    const a=floorLines[i];
+    const aH=a.y1===a.y2;
+    const ax1=Math.min(a.x1,a.x2),ax2=Math.max(a.x1,a.x2);
+    const ay1=Math.min(a.y1,a.y2),ay2=Math.max(a.y1,a.y2);
+    for(let j=i+1;j<floorLines.length;j++){
+      const b=floorLines[j];
+      const bH=b.y1===b.y2;
+      if(aH===bH) continue; // parallel walls — no perpendicular junction
+      const bx1=Math.min(b.x1,b.x2),bx2=Math.max(b.x1,b.x2);
+      const by1=Math.min(b.y1,b.y2),by2=Math.max(b.y1,b.y2);
+      const ix=aH?b.x1:a.x1, iy=aH?a.y1:b.y1;
+      const inA=aH?(ix>=ax1&&ix<=ax2):(iy>=ay1&&iy<=ay2);
+      const inB=bH?(ix>=bx1&&ix<=bx2):(iy>=by1&&iy<=by2);
+      if(!inA||!inB) continue;
+      const key=`${ix},${iy}`;
+      if(seen.has(key)) continue;
+      seen.add(key);
+      const jx=ix-W_PX/2, jy=iy-W_PX/2;
+      g.appendChild(e('rect',{x:jx,y:jy,width:W_PX,height:W_PX,fill:COL_WALL_FILL,stroke:'none'}));
+      g.appendChild(e('rect',{x:jx,y:jy,width:W_PX,height:W_PX,fill:'url(#wall-hatch)',stroke:'none'}));
+    }
+  }
+}
+
 // showHandles=true  → full render, appends to svg (used by render())
 // showHandles=false → partial refresh, inserts before furn-g (used by event handlers)
 function renderLines(showHandles = true){
   const g=e('g',{id:'lines-g','clip-path':'url(#iclip)'});
   floorLines.forEach(ln=>renderWallBody(g,ln,ln.id===selLine,showHandles));
+  drawJunctions(g);
 
   if(hoverEndpoint&&tool==='floor-line'&&!drawLine){
     const{x:hx,y:hy}=hoverEndpoint;
