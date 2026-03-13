@@ -42,6 +42,28 @@ const FURN={
       g.appendChild(e('rect',{x:4,y:h*.15,width:w-8,height:h*.18,fill:'#fffaf0',stroke:'#9a8a70','stroke-width':.5,rx:3}));
       g.appendChild(e('rect',{x:4,y:h*.36,width:w-8,height:h*.58,fill:'#e0d8c8',stroke:'#9a8a70','stroke-width':.5,rx:2}));
     }},
+  bed_full:{label:'Full Bed',w:4.5,h:6.25,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#f0ece0',stroke:sel?'#c4853a':'#9a8a70','stroke-width':sel?1.8:1,rx:2}));
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h*.12,fill:'#c8b890',stroke:'#9a8a70','stroke-width':.5}));
+      // Two pillows (full is narrower than queen so they're a bit tighter)
+      g.appendChild(e('rect',{x:4,y:h*.15,width:w/2-7,height:h*.18,fill:'#fffaf0',stroke:'#9a8a70','stroke-width':.5,rx:3}));
+      g.appendChild(e('rect',{x:w/2+3,y:h*.15,width:w/2-7,height:h*.18,fill:'#fffaf0',stroke:'#9a8a70','stroke-width':.5,rx:3}));
+      g.appendChild(e('rect',{x:4,y:h*.36,width:w-8,height:h*.58,fill:'#e0d8c8',stroke:'#9a8a70','stroke-width':.5,rx:2}));
+      const t=e('text',{x:w/2,y:h*.72,fill:'#6a5a40','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='full';g.appendChild(t);
+    }},
+  nightstand:{label:'Nightstand',w:1.83,h:1.5,
+    draw(g,s,sel){
+      const w=this.w*s,h=this.h*s;
+      // Body
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#d8ccb0',stroke:sel?'#c4853a':'#9a8060','stroke-width':sel?1.8:1,rx:1}));
+      // Drawer face
+      g.appendChild(e('rect',{x:3,y:h*.2,width:w-6,height:h*.6,fill:'#c8bc9c',stroke:'#9a8060','stroke-width':.5,rx:1}));
+      // Drawer pull
+      g.appendChild(e('circle',{cx:w/2,cy:h*.5,r:2,fill:'#8a7050',stroke:'#6a5040','stroke-width':.5}));
+    }},
   dining_round:{label:'Round Table',w:4,h:4,
     draw(g,s,sel){
       const w=this.w*s,h=this.h*s;
@@ -81,6 +103,16 @@ const FURN={
       g.appendChild(e('rect',{x:0,y:0,width:w*.35,height:h,fill:'#c4b898',stroke:'#8a7850','stroke-width':.5,rx:1}));
       const t=e('text',{x:w/2,y:h/2+3,fill:'#6a5a30','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
       t.textContent='desk 4′';g.appendChild(t);
+    }},
+  desk_builtin:{label:'Desk (built-in)',w:4,h:2,wallSnap:true,resizable:true,noRotate:true,sizeModal:true,
+    draw(g,s,sel,iw,ih){
+      const w=(iw||this.w)*s, h=(ih||this.h)*s;
+      // Work surface
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#d4c8a8',stroke:sel?'#c4853a':'#8a7850','stroke-width':sel?1.8:1,rx:1}));
+      // Wall-face edge
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:2,fill:'#c4b898',stroke:'none'}));
+      // Front apron
+      g.appendChild(e('rect',{x:0,y:h-3,width:w,height:3,fill:'#c4b898',stroke:'#8a7850','stroke-width':.4}));
     }},
   bathtub:{label:'Bathtub',w:2.5,h:5,
     draw(g,s,sel){
@@ -234,6 +266,26 @@ const FURN={
       g.appendChild(e('circle',{cx,cy,r:r*.2,fill:'#285828'}));
       // Pot outline
       g.appendChild(e('circle',{cx,cy,r,fill:'none',stroke:sel?'#c4853a':'#3a5a2a','stroke-width':sel?1.8:1}));
+    }},
+  cabinet:{label:'Cabinet',w:3,h:1.5,wallSnap:true,resizable:true,noRotate:true,sizeModal:true,
+    draw(g,s,sel,iw,ih){
+      const w=(iw||this.w)*s, h=(ih||this.h)*s;
+      // Body
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#d8ceb0',stroke:sel?'#c4853a':'#8a7860','stroke-width':sel?1.8:1,rx:1}));
+      // Wall-face edge highlight
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:2,fill:'#c4b898',stroke:'none'}));
+      // Door panel dividers (every 2ft)
+      const panelW=2*s;
+      const nPanels=Math.max(1,Math.round(w/panelW));
+      const apw=w/nPanels;
+      for(let i=1;i<nPanels;i++)
+        g.appendChild(e('line',{x1:i*apw,y1:3,x2:i*apw,y2:h-1,stroke:'#9a8860','stroke-width':.8}));
+      // Door panel inset outlines + knobs
+      for(let i=0;i<nPanels;i++){
+        const px=i*apw;
+        g.appendChild(e('rect',{x:px+3,y:4,width:apw-6,height:h-7,fill:'none',stroke:'#9a8860','stroke-width':.5,rx:1}));
+        g.appendChild(e('circle',{cx:px+apw*.5,cy:h*.7,r:1.8,fill:'#7a6840',stroke:'#5a4820','stroke-width':.4}));
+      }
     }},
   washer_dryer:{label:'Stack W/D',w:2.25,h:2.5,wallSnap:true,
     draw(g,s,sel){

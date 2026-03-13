@@ -261,6 +261,12 @@ function renderFurniture(showSelection = true){
     const fg=e('g',{transform:`translate(${f.x},${f.y}) rotate(${f.rot||0},${pw/2},${ph/2})`,'data-fid':f.id});
     const sel=f.id===selFurn;
     def.draw(fg,SC,sel,iw,ih);
+    // Keep text labels readable — counter-rotate when item is flipped 180°
+    if(((f.rot||0)%360+360)%360===180){
+      fg.querySelectorAll('text').forEach(t=>{
+        t.setAttribute('transform',`rotate(-180,${pw/2},${ph/2})`);
+      });
+    }
     if(showSelection&&sel){
       fg.appendChild(e('rect',{x:-2,y:-2,width:pw+4,height:ph+4,fill:'none',stroke:'#c4853a','stroke-width':1.5,'stroke-dasharray':'4,2',rx:2}));
       if(def.resizable){
