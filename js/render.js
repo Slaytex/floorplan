@@ -294,10 +294,12 @@ function renderFurniture(showSelection = true){
     hit.addEventListener('mousedown',ev=>onFurnDown(ev,f.id));
     hit.addEventListener('click',ev=>ev.stopPropagation());
     fg.appendChild(hit);
-    // Dot on top — must be last so it receives pointer events
+    // Dot on top — hover-only, must be last so it receives pointer events
     if(def.sizeModal){
-      const dot=e('circle',{cx:pw/2,cy:ph/2,r:5,fill:'#9a8a7a',stroke:'#fdfaf4','stroke-width':1.2,opacity:.9});
+      const dot=e('circle',{cx:pw/2,cy:ph/2,r:5,fill:'#9a8a7a',stroke:'#fdfaf4','stroke-width':1.2,opacity:0});
       dot.style.cursor='pointer';
+      dot.addEventListener('mouseenter',()=>dot.setAttribute('opacity',.9));
+      dot.addEventListener('mouseleave',()=>dot.setAttribute('opacity',0));
       dot.addEventListener('mousedown',ev=>ev.stopPropagation());
       dot.addEventListener('click',ev=>{ev.stopPropagation();showCounterModal(f,f.x+pw/2,f.y+ph/2);});
       fg.appendChild(dot);

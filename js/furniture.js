@@ -95,6 +95,8 @@ const FURN={
       const w=this.w*s,h=this.h*s;
       g.appendChild(e('rect',{x:4,y:4,width:w-8,height:h-8,fill:'#c8b880',stroke:'#8a7840','stroke-width':.5,rx:1}));
       g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'#ddd0a8',stroke:sel?'#c4853a':'#8a7840','stroke-width':sel?1.8:1,rx:2}));
+      const t=e('text',{x:w/2,y:h/2+3,fill:'#6a5a30','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='coffee';g.appendChild(t);
     }},
   desk:{label:'Desk 4′',w:4,h:2,
     draw(g,s,sel){
@@ -113,6 +115,8 @@ const FURN={
       g.appendChild(e('rect',{x:0,y:0,width:w,height:2,fill:'#c4b898',stroke:'none'}));
       // Front apron
       g.appendChild(e('rect',{x:0,y:h-3,width:w,height:3,fill:'#c4b898',stroke:'#8a7850','stroke-width':.4}));
+      const t=e('text',{x:w/2,y:h/2+3,fill:'#6a5a30','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
+      t.textContent='built-in desk';g.appendChild(t);
     }},
   bathtub:{label:'Bathtub',w:2.5,h:5,
     draw(g,s,sel){
