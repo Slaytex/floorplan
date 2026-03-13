@@ -359,6 +359,8 @@ ca.addEventListener('drop',ev=>{
   const raw=svgPt(ev);
   let c=clampFurn(raw.x-def.w*SC/2,raw.y-def.h*SC/2,def,0);
   if(def.wallSnap&&snapEnabled) c=snapFurnToWalls(c.x,c.y,def,0);
-  furniture.push({id:crypto.randomUUID(),type,x:c.x,y:c.y,rot:0});
+  const newF={id:crypto.randomUUID(),type,x:c.x,y:c.y,rot:0};
+  if(def.isLabel){newF.text='Label';newF.fontSize=7;furniture.push(newF);labelUpdateSize(newF);}
+  else furniture.push(newF);
   render();
 });

@@ -89,6 +89,65 @@ function addSlidingDoor(){
   render();
   setStatus('Sliding door — full wall width');
 }
+// ── LABEL FURNITURE ──
+window._labelHideTid=null;
+
+function labelUpdateSize(f){
+  const text=f.text||'Label';
+  const fs=f.fontSize||7;
+  // DM Mono monospace: char width ≈ 0.6 × fontSize
+  const pw=Math.max(20, text.length*fs*0.6+8);
+  const ph=fs+6;
+  f.w=pw/SC; f.h=ph/SC;
+}
+
+function showLabelTooltip(f,ev){
+  clearTimeout(window._labelHideTid);
+  const tip=document.getElementById('label-fz');
+  tip.innerHTML='';
+  [5,6,7,8,9,10,11,12].forEach(sz=>{
+    const b=document.createElement('button');
+    b.className='lfsz'+(sz===(f.fontSize||7)?' lfsz-on':'');
+    b.textContent=sz;
+    b.addEventListener('mousedown',me=>{
+      me.stopPropagation();
+      f.fontSize=sz; labelUpdateSize(f); saveHistory(); render();
+      showLabelTooltip(f,me); // rebuild to update active
+    });
+    tip.appendChild(b);
+  });
+  moveLabelTooltip(ev);
+  tip.style.display='flex';
+}
+
+function moveLabelTooltip(ev){
+  const tip=document.getElementById('label-fz');
+  tip.style.left=(ev.clientX+10)+'px';
+  tip.style.top=(ev.clientY-tip.offsetHeight-6)+'px';
+}
+
+function hideLabelTooltip(){
+  window._labelHideTid=setTimeout(()=>{
+    const tip=document.getElementById('label-fz');
+    if(!tip.matches(':hover')) tip.style.display='none';
+  },150);
+}
+
+function startLabelEdit(f,ev){
+  const inp=document.getElementById('label-inp');
+  inp.value=f.text||'Label';
+  inp.style.left=(ev.clientX-40)+'px';
+  inp.style.top=(ev.clientY-10)+'px';
+  inp.style.display='block';
+  inp.focus(); inp.select();
+  inp.onkeydown=e=>{if(e.key==='Enter'||e.key==='Escape') inp.blur();};
+  inp.onblur=()=>{
+    const v=inp.value.trim();
+    if(v){f.text=v; labelUpdateSize(f); saveHistory(); render();}
+    inp.style.display='none';
+  };
+}
+
 function clearLines(){if(confirm('Clear all interior walls?')){saveHistory();floorLines=[];selLine=null;selOpening=null;render();}}
 function resetPlan(){
   if(!confirm('Reset entire plan?'))return;

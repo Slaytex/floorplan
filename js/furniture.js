@@ -322,6 +322,19 @@ const FURN={
       const t=e('text',{x:w/2,y:h*.62,fill:'#505860','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
       t.textContent='DW';g.appendChild(t);
     }},
+  label:{label:'Label',w:2,h:0.75,isLabel:true,
+    draw(g,s,sel,iw,ih,f){
+      const text=(f&&f.text)||'Label';
+      const fontSize=(f&&f.fontSize)||7;
+      const w=(iw||this.w)*s, h=(ih||this.h)*s;
+      // Frame
+      g.appendChild(e('rect',{x:0,y:0,width:w,height:h,fill:'transparent',
+        stroke:sel?'#c4853a':'#9A8A7A','stroke-width':sel?1.5:.8,rx:1}));
+      // Text
+      const t=e('text',{x:w/2,y:h/2,fill:'#9A8A7A','font-family':'DM Mono,monospace',
+        'font-size':fontSize,'text-anchor':'middle','dominant-baseline':'central'});
+      t.textContent=text; g.appendChild(t);
+    }},
 };
 
 // ── FURNITURE PANEL ──

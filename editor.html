@@ -63,20 +63,23 @@
 
 <div id="status">Wall tool active</div>
 
+<div id="label-fz" style="display:none;position:fixed;z-index:9999;background:#1e1e1a;border:1px solid #4a4038;border-radius:4px;padding:3px 5px;gap:2px;align-items:center;pointer-events:all"></div>
+<input id="label-inp" type="text" style="display:none;position:fixed;z-index:9999;background:#1e1e1a;border:none;border-bottom:1px solid #c4853a;color:#ddd4c0;font-family:'DM Mono',monospace;font-size:11px;padding:2px 4px;outline:none;min-width:80px">
+
 <div id="counter-modal" style="display:none">
   <div class="cm-row"><span class="cm-label">W</span><input type="number" id="cm-w" min="6" max="480" step="1"><span class="cm-unit">″</span></div>
   <div class="cm-row"><span class="cm-label">H</span><input type="number" id="cm-h" min="6" max="480" step="1"><span class="cm-unit">″</span></div>
   <button class="cm-apply" onclick="applyCounterSize()">Apply</button>
 </div>
-<script src="js/constants.js?v=15"></script>
-<script src="js/state.js?v=15"></script>
-<script src="js/render.js?v=15"></script>
-<script src="js/furniture.js?v=15"></script>
-<script src="js/events.js?v=15"></script>
-<script src="js/controls.js?v=15"></script>
-<script src="js/export.js?v=15"></script>
-<script src="js/sync.js?v=15"></script>
-<script src="js/main.js?v=15"></script>
+<script src="js/constants.js?v=16"></script>
+<script src="js/state.js?v=16"></script>
+<script src="js/render.js?v=16"></script>
+<script src="js/furniture.js?v=16"></script>
+<script src="js/events.js?v=16"></script>
+<script src="js/controls.js?v=16"></script>
+<script src="js/export.js?v=16"></script>
+<script src="js/sync.js?v=16"></script>
+<script src="js/main.js?v=16"></script>
 <script>
 (function(){
   const tip=document.createElement('div');
@@ -99,6 +102,16 @@
       tip.classList.remove('tip-visible');
     });
   });
+})();
+// Label font-size tooltip: keep open while hovering the tooltip itself
+(function(){
+  const fz=document.getElementById('label-fz');
+  fz.addEventListener('mouseenter',()=>clearTimeout(window._labelHideTid));
+  fz.addEventListener('mouseleave',()=>hideLabelTooltip());
+  // Inject .lfsz button styles
+  const s=document.createElement('style');
+  s.textContent='.lfsz{background:none;border:none;color:#9a8a7a;font-family:"DM Mono",monospace;font-size:9px;cursor:pointer;padding:1px 4px;border-radius:2px;line-height:1.4}.lfsz:hover,.lfsz-on{background:#3a3028;color:#c4853a}';
+  document.head.appendChild(s);
 })();
 </script>
 </body>
