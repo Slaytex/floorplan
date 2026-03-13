@@ -91,29 +91,35 @@ function addSlidingDoor(){
 }
 // ── LABEL FURNITURE ──
 window._labelHideTid=null;
+window._labelFurnRef=null;  // currently-hovered label instance
+window._labelLastEv=null;   // last mouse event for repositioning after render
 
 function labelUpdateSize(f){
   const text=f.text||'Label';
   const fs=f.fontSize||7;
-  // DM Mono monospace: char width ≈ 0.6 × fontSize
   const pw=Math.max(20, text.length*fs*0.6+8);
   const ph=fs+6;
   f.w=pw/SC; f.h=ph/SC;
 }
 
+function _applyLabelSize(f,sz){
+  f.fontSize=sz; labelUpdateSize(f); saveHistory(); render();
+  // Re-show tooltip — render() destroyed the old SVG group so mouseleave fires;
+  // by calling showLabelTooltip immediately we reopen it at the saved position.
+  if(window._labelLastEv) showLabelTooltip(f, window._labelLastEv);
+}
+
 function showLabelTooltip(f,ev){
   clearTimeout(window._labelHideTid);
+  window._labelFurnRef=f;
+  window._labelLastEv=ev;
   const tip=document.getElementById('label-fz');
   tip.innerHTML='';
   [5,6,7,8,9,10,11,12].forEach(sz=>{
     const b=document.createElement('button');
     b.className='lfsz'+(sz===(f.fontSize||7)?' lfsz-on':'');
     b.textContent=sz;
-    b.addEventListener('mousedown',me=>{
-      me.stopPropagation();
-      f.fontSize=sz; labelUpdateSize(f); saveHistory(); render();
-      showLabelTooltip(f,me); // rebuild to update active
-    });
+    b.addEventListener('mousedown',me=>{me.stopPropagation(); _applyLabelSize(f,sz);});
     tip.appendChild(b);
   });
   moveLabelTooltip(ev);
@@ -121,6 +127,7 @@ function showLabelTooltip(f,ev){
 }
 
 function moveLabelTooltip(ev){
+  window._labelLastEv=ev;
   const tip=document.getElementById('label-fz');
   tip.style.left=(ev.clientX+10)+'px';
   tip.style.top=(ev.clientY-tip.offsetHeight-6)+'px';
@@ -129,9 +136,20 @@ function moveLabelTooltip(ev){
 function hideLabelTooltip(){
   window._labelHideTid=setTimeout(()=>{
     const tip=document.getElementById('label-fz');
-    if(!tip.matches(':hover')) tip.style.display='none';
+    if(!tip.matches(':hover')){
+      tip.style.display='none';
+      window._labelFurnRef=null;
+    }
   },150);
 }
+
+// Keyboard: press 5–9 while hovering a label to set font size
+document.addEventListener('keydown',ev=>{
+  if(!window._labelFurnRef) return;
+  if(ev.target.matches('input,textarea')) return;
+  const sz=parseInt(ev.key);
+  if(sz>=5&&sz<=9){ev.preventDefault(); _applyLabelSize(window._labelFurnRef,sz);}
+});
 
 function startLabelEdit(f,ev){
   const inp=document.getElementById('label-inp');
