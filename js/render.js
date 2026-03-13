@@ -269,8 +269,7 @@ function renderFurniture(showSelection = true){
     }
     // Label: hover tooltip for font size, dblclick to edit text
     if(def.isLabel){
-      fg.addEventListener('mouseenter',ev=>showLabelTooltip(f,ev));
-      fg.addEventListener('mousemove',ev=>moveLabelTooltip(ev));
+      fg.addEventListener('mouseenter',()=>showLabelTooltip(f,fg));
       fg.addEventListener('mouseleave',()=>hideLabelTooltip());
       fg.addEventListener('dblclick',ev=>{ev.stopPropagation();startLabelEdit(f,ev);});
     }
