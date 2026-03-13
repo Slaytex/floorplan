@@ -104,7 +104,7 @@ const FURN={
       const t=e('text',{x:w/2,y:h/2+3,fill:'#6a5a30','font-family':'DM Mono,monospace','font-size':'7','text-anchor':'middle'});
       t.textContent='desk 4′';g.appendChild(t);
     }},
-  desk_builtin:{label:'Desk (built-in)',w:4,h:2,wallSnap:true,resizable:true,noRotate:true,sizeModal:true,
+  desk_builtin:{label:'Built-in Desk',w:4,h:2,wallSnap:true,resizable:true,noRotate:true,sizeModal:true,
     draw(g,s,sel,iw,ih){
       const w=(iw||this.w)*s, h=(ih||this.h)*s;
       // Work surface
