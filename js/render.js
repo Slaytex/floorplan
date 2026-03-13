@@ -275,12 +275,13 @@ function drawSide(side){secs[side].forEach((t,i)=>{const r=sRect(side,i);drawSec
 function makeSectionHit(x,y,w,h,side,i,type){
   const hit=e('rect',{x,y,width:w,height:h,fill:'transparent',stroke:'none'});
   hit.style.cursor='pointer';
-  const isDoorSl=type==='door-sidelight'||type==='door-sidelight-flip';
+  const DS_CYCLE=['door-sidelight','door-sidelight-flip','door-sidelight-out','door-sidelight-flip-out'];
+  const isDoorSl=DS_CYCLE.includes(type);
   hit.addEventListener('contextmenu',ev=>{
     if(!isDoorSl)return;
     ev.preventDefault(); ev.stopPropagation();
     saveHistory();
-    secs[side][i]=type==='door-sidelight'?'door-sidelight-flip':'door-sidelight';
+    secs[side][i]=DS_CYCLE[(DS_CYCLE.indexOf(type)+1)%4];
     render();
   });
   hit.addEventListener('mouseenter',()=>{if(tool==='wall'||tool==='window'||tool==='door'||tool==='door-sidelight'){hit.setAttribute('fill','rgba(196,133,58,.15)');hit.setAttribute('stroke','#c4853a');hit.setAttribute('stroke-width','1.5');}});
@@ -330,14 +331,21 @@ function drawSec(side,i,type,x,y,w,h){
       g.appendChild(e('rect',{x,y,width:w,height:4,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
       g.appendChild(e('rect',{x,y,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
     }
-  } else if(type==='door-sidelight'||type==='door-sidelight-flip'){
-    // Normal: jamb(4) + door(72) + mullion(4) + sidelight(16) = 96
-    // Flip:   sidelight(16) + mullion(4) + door(72) + jamb(4) = 96
-    const flip=type==='door-sidelight-flip';
+  } else if(type==='door-sidelight'||type==='door-sidelight-flip'
+          ||type==='door-sidelight-out'||type==='door-sidelight-flip-out'){
+    // 4 layouts (all 96px wide), always swing inward. -out = hinge on near side of sidelight.
+    // 1: [JAMB(4)|DOOR(72)|MULLION(4)|SIDELIGHT(16)]  hinge-left,  sl-right
+    // 2: [SIDELIGHT(16)|MULLION(4)|DOOR(72)|JAMB(4)]  hinge-right, sl-left
+    // 3: [DOOR(72)|JAMB(4)|MULLION(4)|SIDELIGHT(16)]  hinge-right, sl-right  (-out)
+    // 4: [SIDELIGHT(16)|MULLION(4)|JAMB(4)|DOOR(72)]  hinge-left,  sl-left   (-flip-out)
+    const flip=type==='door-sidelight-flip'||type==='door-sidelight-flip-out';
+    const rev =type==='door-sidelight-out' ||type==='door-sidelight-flip-out';
     if(horiz){
-      const jx=flip?x+80:x, dx=flip?x+20:x+4, mx=flip?x+16:x+76, slx=flip?x:x+80;
-      const jeLine=flip?x+92:x+4;
-      const slCx=flip?x+8:x+88;
+      let jx,dx,mx,slx,jeLine,slCx;
+      if(!flip&&!rev){ jx=x;    dx=x+4;  mx=x+76; slx=x+80; jeLine=x+4;  slCx=x+88; }
+      if( flip&&!rev){ jx=x+92; dx=x+20; mx=x+16; slx=x;    jeLine=x+92; slCx=x+8;  }
+      if(!flip&& rev){ jx=x+72; dx=x;    mx=x+76; slx=x+80; jeLine=x+72; slCx=x+88; }
+      if( flip&& rev){ jx=x+20; dx=x+24; mx=x+16; slx=x;    jeLine=x+24; slCx=x+8;  }
       // Jamb
       g.appendChild(e('rect',{x:jx,y,width:4,height:h,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
       g.appendChild(e('rect',{x:jx,y,width:4,height:h,fill:'url(#wall-hatch)',stroke:'none'}));
@@ -350,11 +358,12 @@ function drawSec(side,i,type,x,y,w,h){
       // Sidelight
       g.appendChild(e('rect',{x:slx,y,width:16,height:h,fill:'#c2dce8',stroke:'#5b9ab5','stroke-width':1.5}));
       g.appendChild(e('line',{x1:slCx,y1:y+1,x2:slCx,y2:y+h-1,stroke:'#4a8aaa','stroke-width':.9}));
-      // swing arc drawn separately in drawDoorSwings() after all sections
     } else {
-      const jy=flip?y+80:y, dy=flip?y+20:y+4, my=flip?y+16:y+76, sly=flip?y:y+80;
-      const jeLine=flip?y+92:y+4;
-      const slCy=flip?y+8:y+88;
+      let jy,dy,my,sly,jeLine,slCy;
+      if(!flip&&!rev){ jy=y;    dy=y+4;  my=y+76; sly=y+80; jeLine=y+4;  slCy=y+88; }
+      if( flip&&!rev){ jy=y+92; dy=y+20; my=y+16; sly=y;    jeLine=y+92; slCy=y+8;  }
+      if(!flip&& rev){ jy=y+72; dy=y;    my=y+76; sly=y+80; jeLine=y+72; slCy=y+88; }
+      if( flip&& rev){ jy=y+20; dy=y+24; my=y+16; sly=y;    jeLine=y+24; slCy=y+8;  }
       // Jamb
       g.appendChild(e('rect',{x,y:jy,width:w,height:4,fill:COL_SEC_FILL,stroke:COL_SEC_STROKE,'stroke-width':.5}));
       g.appendChild(e('rect',{x,y:jy,width:w,height:4,fill:'url(#wall-hatch)',stroke:'none'}));
@@ -367,7 +376,6 @@ function drawSec(side,i,type,x,y,w,h){
       // Sidelight
       g.appendChild(e('rect',{x,y:sly,width:w,height:16,fill:'#c2dce8',stroke:'#5b9ab5','stroke-width':1.5}));
       g.appendChild(e('line',{x1:x+1,y1:slCy,x2:x+w-1,y2:slCy,stroke:'#4a8aaa','stroke-width':.9}));
-      // swing arc drawn separately in drawDoorSwings() after all sections
     }
   }
   g.appendChild(makeSectionHit(x,y,w,h,side,i,type));
@@ -377,17 +385,23 @@ function drawSec(side,i,type,x,y,w,h){
 function drawDoorSwings(){
   ['top','bottom','left','right'].forEach(side=>{
     secs[side].forEach((type,i)=>{
-      if(type!=='door'&&type!=='door-sidelight'&&type!=='door-sidelight-flip')return;
+      const DS=['door-sidelight','door-sidelight-flip','door-sidelight-out','door-sidelight-flip-out'];
+      if(type!=='door'&&!DS.includes(type))return;
       const r=sRect(side,i);
       const{x,y,w,h}=r;
       const horiz=side==='top'||side==='bottom';
-      const flip=type==='door-sidelight-flip'; // door and door-sidelight both use flip=false layout
+      const flip=type==='door-sidelight-flip'||type==='door-sidelight-flip-out';
+      const rev =type==='door-sidelight-out' ||type==='door-sidelight-flip-out';
       let x1c,y1c,x2c,y2c, x1o,y1o,x2o,y2o, d;
       if(horiz){
         const hy=side==='top'?y+h:y;
-        const aHx=flip?x+92:x+4;
-        const aTx=flip?x+20:x+76;
-        const aOy=side==='top'?y+h+72:y-72;
+        // aHx = hinge x, aTx = door-tip x (free end) — all 4 states always swing inward
+        let aHx,aTx;
+        if(!flip&&!rev){ aHx=x+4;  aTx=x+76; }
+        if( flip&&!rev){ aHx=x+92; aTx=x+20; }
+        if(!flip&& rev){ aHx=x+72; aTx=x;    }
+        if( flip&& rev){ aHx=x+24; aTx=x+96; }
+        const aOy=side==='top'?y+h+72:y-72; // always inward
         x1c=aHx;y1c=hy;x2c=aTx;y2c=hy;   // closed position line
         x1o=aHx;y1o=hy;x2o=aHx;y2o=aOy;  // open position line
         // Quarter-circle bezier: from door-tip-closed (aTx,hy) to door-tip-open (aHx,aOy)
@@ -395,9 +409,12 @@ function drawDoorSwings(){
         d=`M ${aTx} ${hy} C ${aTx} ${hy+inDir*19} ${aHx+sideDir*64} ${hy+inDir*37} ${aHx+sideDir*51} ${hy+inDir*51} C ${aHx+sideDir*37} ${hy+inDir*64} ${aHx+sideDir*19} ${aOy} ${aHx} ${aOy}`;
       } else {
         const wx=side==='left'?x+w:x;
-        const aHy=flip?y+92:y+4;
-        const aTy=flip?y+20:y+76;
-        const aOx=side==='left'?x+w+72:x-72;
+        let aHy,aTy;
+        if(!flip&&!rev){ aHy=y+4;  aTy=y+76; }
+        if( flip&&!rev){ aHy=y+92; aTy=y+20; }
+        if(!flip&& rev){ aHy=y+72; aTy=y;    }
+        if( flip&& rev){ aHy=y+24; aTy=y+96; }
+        const aOx=side==='left'?x+w+72:x-72; // always inward
         x1c=wx;y1c=aHy;x2c=wx;y2c=aTy;   // closed position line
         x1o=wx;y1o=aHy;x2o=aOx;y2o=aHy;  // open position line
         // Quarter-circle bezier: from door-tip-closed (wx,aTy) to door-tip-open (aOx,aHy)

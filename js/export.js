@@ -30,20 +30,41 @@ function exportDXF(){
     ].join('\n');
   }
 
-  // Door+sidelight swing arc (36" door). flip=true → sidelight on left/top, jamb at far end.
-  function doorSlArc(side,i,flip){
+  // Door+sidelight swing arc. flip=sidelight-left, rev=hinge near sidelight. Always swings inward.
+  function doorSlArc(side,i,flip,rev){
     const r=sRect(side,i);
     const {x,y,w,h}=r;
     const radius=+(72/SC).toFixed(4); // 3 ft = 36"
+    // Hinge x/y based on 4 layout states (mirrors drawDoorSwings logic)
     let cx,cy,startAngle,endAngle;
-    if(side==='top'){
-      cx=dxfX(flip?x+92:x+4); cy=dxfY(y+h); startAngle=flip?90:0; endAngle=flip?180:90;
-    } else if(side==='bottom'){
-      cx=dxfX(flip?x+92:x+4); cy=dxfY(y); startAngle=flip?180:270; endAngle=flip?270:360;
-    } else if(side==='left'){
-      cx=dxfX(x+w); cy=dxfY(flip?y+92:y+4); startAngle=flip?0:90; endAngle=flip?90:180;
+    if(side==='top'||side==='bottom'){
+      let aHx;
+      if(!flip&&!rev) aHx=x+4;
+      if( flip&&!rev) aHx=x+92;
+      if(!flip&& rev) aHx=x+72;
+      if( flip&& rev) aHx=x+24;
+      cx=dxfX(aHx); cy=dxfY(side==='top'?y+h:y);
+      if(side==='top'){
+        startAngle=(!flip&&!rev)?0:( flip&&!rev)?90:(!flip&&rev)?90:0;
+        endAngle  =(!flip&&!rev)?90:(flip&&!rev)?180:(!flip&&rev)?180:90;
+      } else {
+        startAngle=(!flip&&!rev)?270:(flip&&!rev)?180:(!flip&&rev)?180:270;
+        endAngle  =(!flip&&!rev)?360:(flip&&!rev)?270:(!flip&&rev)?270:360;
+      }
     } else {
-      cx=dxfX(x); cy=dxfY(flip?y+92:y+4); startAngle=flip?90:0; endAngle=flip?180:90;
+      let aHy;
+      if(!flip&&!rev) aHy=y+4;
+      if( flip&&!rev) aHy=y+92;
+      if(!flip&& rev) aHy=y+72;
+      if( flip&& rev) aHy=y+24;
+      cx=dxfX(side==='left'?x+w:x); cy=dxfY(aHy);
+      if(side==='left'){
+        startAngle=(!flip&&!rev)?90:(flip&&!rev)?0:(!flip&&rev)?0:90;
+        endAngle  =(!flip&&!rev)?180:(flip&&!rev)?90:(!flip&&rev)?90:180;
+      } else {
+        startAngle=(!flip&&!rev)?0:(flip&&!rev)?90:(!flip&&rev)?90:0;
+        endAngle  =(!flip&&!rev)?90:(flip&&!rev)?180:(!flip&&rev)?180:90;
+      }
     }
     return['0','ARC','8','DOORS','10',cx,'20',cy,'30','0','40',radius,'50',startAngle,'51',endAngle].join('\n');
   }
@@ -94,8 +115,10 @@ function exportDXF(){
       const layer=type==='wall'?'WALLS':type==='window'?'WINDOWS':'DOORS';
       entities.push(lwRect({x:r.x,y:r.y,width:r.w,height:r.h},layer));
       if(type==='door') entities.push(doorArc(side,i));
-      if(type==='door-sidelight') entities.push(doorSlArc(side,i,false));
-      if(type==='door-sidelight-flip') entities.push(doorSlArc(side,i,true));
+      if(type==='door-sidelight')          entities.push(doorSlArc(side,i,false,false));
+      if(type==='door-sidelight-flip')     entities.push(doorSlArc(side,i,true, false));
+      if(type==='door-sidelight-out')      entities.push(doorSlArc(side,i,false,true));
+      if(type==='door-sidelight-flip-out') entities.push(doorSlArc(side,i,true, true));
     });
   });
 

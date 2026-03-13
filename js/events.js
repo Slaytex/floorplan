@@ -95,11 +95,19 @@ ca.addEventListener('wheel',ev=>{
   applyTransform();
 },{passive:false});
 
+function toggleSnap(){
+  snapEnabled=!snapEnabled;
+  const btn=document.getElementById('snap-btn');
+  if(btn) btn.classList.toggle('active',snapEnabled);
+  setStatus(snapEnabled?'Snap on':'Snap off — position freely');
+}
+
 document.addEventListener('keydown',ev=>{
   if(ev.target.matches('input,textarea'))return;
   if(ev.code==='Space'&&!ev.repeat){
     spaceDown=true; ca.style.cursor='grab'; document.body.style.cursor='grab'; ev.preventDefault();
   }
+  if(ev.key==='g'||ev.key==='G'){toggleSnap();return;}
   if(ev.key==='f'){setTool('floor-line');return;}
   if(ev.key==='s'){setTool('select');return;}
   if(ev.key==='d'){addOpening(OPENING_STD);return;}
@@ -178,8 +186,9 @@ function onSvgDown(ev){
   if(spaceDown)return;
   if(tool!=='floor-line')return;
   const pt=clampI(svgPt(ev));
-  const sp=findSnapEndpoint(snapI(pt.x),snapI(pt.y));
-  const sx=sp?sp.x:snapI(pt.x), sy=sp?sp.y:snapI(pt.y);
+  const gx=snapEnabled?snapI(pt.x):Math.round(pt.x), gy=snapEnabled?snapI(pt.y):Math.round(pt.y);
+  const sp=snapEnabled?findSnapEndpoint(gx,gy):null;
+  const sx=sp?sp.x:gx, sy=sp?sp.y:gy;
   drawLine={x1:sx,y1:sy,x2:sx,y2:sy};
   ev.stopPropagation();
 }
@@ -187,15 +196,15 @@ function onSvgMove(ev){
   if(isPanning)return;
   if(tool==='floor-line'){
     const pt=clampI(svgPt(ev));
-    const sx=snapI(pt.x),sy=snapI(pt.y);
-    const he=findSnapEndpoint(sx,sy);
+    const sx=snapEnabled?snapI(pt.x):Math.round(pt.x), sy=snapEnabled?snapI(pt.y):Math.round(pt.y);
+    const he=snapEnabled?findSnapEndpoint(sx,sy):null;
     if(he!==hoverEndpoint){hoverEndpoint=he;if(!drawLine){const old=document.getElementById('lines-g');if(old)old.remove();renderLines(false);}}
     if(drawLine){
       const dx=sx-drawLine.x1,dy=sy-drawLine.y1;
       let ex,ey;
       if(Math.abs(dx)>=Math.abs(dy)){ex=sx;ey=drawLine.y1;}
       else{ex=drawLine.x1;ey=sy;}
-      const sp=findSnapEndpoint(ex,ey);
+      const sp=snapEnabled?findSnapEndpoint(ex,ey):null;
       if(sp){ex=sp.x;ey=sp.y;snapIndicator=sp;}
       else snapIndicator=null;
       drawLine.x2=ex; drawLine.y2=ey;
@@ -209,15 +218,15 @@ function onSvgMove(ev){
     const ln=floorLines.find(l=>l.id===dragWall.id);
     if(ln){
       if(dragWall.type==='move'){
-        const dx=snapI(pt.x)-snapI(dragWall.startX);
-        const dy=snapI(pt.y)-snapI(dragWall.startY);
+        const dx=(snapEnabled?snapI(pt.x):Math.round(pt.x))-(snapEnabled?snapI(dragWall.startX):Math.round(dragWall.startX));
+        const dy=(snapEnabled?snapI(pt.y):Math.round(pt.y))-(snapEnabled?snapI(dragWall.startY):Math.round(dragWall.startY));
         ln.x1=dragWall.ox1+dx; ln.y1=dragWall.oy1+dy;
         ln.x2=dragWall.ox2+dx; ln.y2=dragWall.oy2+dy;
         snapIndicator=null;
       } else {
         const horiz=dragWall.axis==='h';
-        const tx=snapI(pt.x), ty=snapI(pt.y);
-        const sp=findSnapEndpoint(horiz?tx:ln.x1, horiz?ln.y1:ty, dragWall.id);
+        const tx=snapEnabled?snapI(pt.x):Math.round(pt.x), ty=snapEnabled?snapI(pt.y):Math.round(pt.y);
+        const sp=snapEnabled?findSnapEndpoint(horiz?tx:ln.x1, horiz?ln.y1:ty, dragWall.id):null;
         if(sp){snapIndicator=sp;}
         else snapIndicator=null;
         if(dragWall.type==='end1'){
@@ -252,25 +261,27 @@ function onSvgMove(ev){
       const SNAP=16;
       if(dragFurnResize.axis==='w'){
         let newW=Math.max(0.5,dragFurnResize.startW+(pt.x-dragFurnResize.startVal)/SC);
-        const rPx=f.x+newW*SC;
-        // Snap right edge to perimeter and interior vertical walls
-        if(Math.abs(rPx-(W_PX+IPW))<=SNAP) newW=(W_PX+IPW-f.x)/SC;
-        else for(const ln of floorLines){
-          if(ln.x1===ln.x2){
-            if(Math.abs(rPx-(ln.x1-W_PX/2))<=SNAP){newW=(ln.x1-W_PX/2-f.x)/SC;break;}
-            if(Math.abs(rPx-(ln.x1+W_PX/2))<=SNAP){newW=(ln.x1+W_PX/2-f.x)/SC;break;}
+        if(snapEnabled){
+          const rPx=f.x+newW*SC;
+          if(Math.abs(rPx-(W_PX+IPW))<=SNAP) newW=(W_PX+IPW-f.x)/SC;
+          else for(const ln of floorLines){
+            if(ln.x1===ln.x2){
+              if(Math.abs(rPx-(ln.x1-W_PX/2))<=SNAP){newW=(ln.x1-W_PX/2-f.x)/SC;break;}
+              if(Math.abs(rPx-(ln.x1+W_PX/2))<=SNAP){newW=(ln.x1+W_PX/2-f.x)/SC;break;}
+            }
           }
         }
         f.w=Math.max(0.5,Math.min(newW,(W_PX+IPW-f.x)/SC));
       } else {
         let newH=Math.max(0.5,dragFurnResize.startH+(pt.y-dragFurnResize.startVal)/SC);
-        const bPx=f.y+newH*SC;
-        // Snap bottom edge to perimeter and interior horizontal walls
-        if(Math.abs(bPx-(W_PX+IPH))<=SNAP) newH=(W_PX+IPH-f.y)/SC;
-        else for(const ln of floorLines){
-          if(ln.y1===ln.y2){
-            if(Math.abs(bPx-(ln.y1-W_PX/2))<=SNAP){newH=(ln.y1-W_PX/2-f.y)/SC;break;}
-            if(Math.abs(bPx-(ln.y1+W_PX/2))<=SNAP){newH=(ln.y1+W_PX/2-f.y)/SC;break;}
+        if(snapEnabled){
+          const bPx=f.y+newH*SC;
+          if(Math.abs(bPx-(W_PX+IPH))<=SNAP) newH=(W_PX+IPH-f.y)/SC;
+          else for(const ln of floorLines){
+            if(ln.y1===ln.y2){
+              if(Math.abs(bPx-(ln.y1-W_PX/2))<=SNAP){newH=(ln.y1-W_PX/2-f.y)/SC;break;}
+              if(Math.abs(bPx-(ln.y1+W_PX/2))<=SNAP){newH=(ln.y1+W_PX/2-f.y)/SC;break;}
+            }
           }
         }
         f.h=Math.max(0.5,Math.min(newH,(W_PX+IPH-f.y)/SC));
@@ -307,7 +318,7 @@ function onSvgUp(ev){
   if(dragOpening){saveHistory();dragOpening=null; render();}
   if(dragFurn){
     const f=furniture.find(f=>f.id===dragFurn.id);
-    if(f){const def=FURN[f.type];if(def.wallSnap){const c=snapFurnToWalls(f.x,f.y,def,f.rot,f.w,f.h);f.x=c.x;f.y=c.y;}}
+    if(f){const def=FURN[f.type];if(def.wallSnap&&snapEnabled){const c=snapFurnToWalls(f.x,f.y,def,f.rot,f.w,f.h);f.x=c.x;f.y=c.y;}}
     saveHistory();dragFurn=null;render();
   }
   if(dragFurnResize){saveHistory();dragFurnResize=null; render();}
@@ -346,7 +357,7 @@ ca.addEventListener('drop',ev=>{
   const def=FURN[type];
   const raw=svgPt(ev);
   let c=clampFurn(raw.x-def.w*SC/2,raw.y-def.h*SC/2,def,0);
-  if(def.wallSnap) c=snapFurnToWalls(c.x,c.y,def,0);
+  if(def.wallSnap&&snapEnabled) c=snapFurnToWalls(c.x,c.y,def,0);
   furniture.push({id:crypto.randomUUID(),type,x:c.x,y:c.y,rot:0});
   render();
 });

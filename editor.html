@@ -33,6 +33,7 @@
   <button class="tbtn" data-tip="Add a 36″ door opening to the selected wall" onclick="addOpening(OPENING_STD)"><div class="ti ti-floor">⊟</div>Opening 36″ door<kbd class="tbtn-kbd">D</kbd></button>
   <button class="tbtn" data-tip="Add a 32″ pocket door opening to the selected wall" onclick="addOpening(OPENING_POCKET)"><div class="ti ti-floor">⊟</div>Opening 32″ pocket<kbd class="tbtn-kbd">P</kbd></button>
   <button class="tbtn" data-tip="Remove all interior walls (cannot be undone)" onclick="clearLines()"><div class="ti ti-era">✕✕</div>Clear Walls</button>
+  <button class="tbtn active" id="snap-btn" data-tip="Toggle grid & wall snapping (G)" onclick="toggleSnap()"><div class="ti ti-sel">⊞</div>Snap<kbd class="tbtn-kbd">G</kbd></button>
   <div class="psec">Dimensions</div>
   <div class="info-block">
     Interior<br><span id="dim-interior">32′ × 20′</span><br>
@@ -66,15 +67,15 @@
   <div class="cm-row"><span class="cm-label">H</span><input type="number" id="cm-h" min="6" max="480" step="1"><span class="cm-unit">″</span></div>
   <button class="cm-apply" onclick="applyCounterSize()">Apply</button>
 </div>
-<script src="js/constants.js?v=8"></script>
-<script src="js/state.js?v=8"></script>
-<script src="js/render.js?v=8"></script>
-<script src="js/furniture.js?v=8"></script>
-<script src="js/events.js?v=8"></script>
-<script src="js/controls.js?v=8"></script>
-<script src="js/export.js?v=8"></script>
-<script src="js/sync.js?v=8"></script>
-<script src="js/main.js?v=8"></script>
+<script src="js/constants.js?v=11"></script>
+<script src="js/state.js?v=11"></script>
+<script src="js/render.js?v=11"></script>
+<script src="js/furniture.js?v=11"></script>
+<script src="js/events.js?v=11"></script>
+<script src="js/controls.js?v=11"></script>
+<script src="js/export.js?v=11"></script>
+<script src="js/sync.js?v=11"></script>
+<script src="js/main.js?v=11"></script>
 <script>
 (function(){
   const tip=document.createElement('div');

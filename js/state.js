@@ -9,6 +9,7 @@ updateSvgDimensions();
 
 // Tool state
 let tool='wall';
+let snapEnabled=true;
 const secs={
   top:   Array(SL).fill('wall'),
   bottom:Array(SL).fill('wall'),

@@ -33,7 +33,7 @@ function setTool(t){
     'window':'Click wall sections to add windows',
     'door':'Click wall sections to add doors',
     'floor-line':'Click & drag to draw room divider lines (snaps to 1ft grid)',
-    'door-sidelight':'Click wall sections to add door+sidelight (36″ door + 8″ sidelight) · Right-click painted section to flip sidelight side',
+    'door-sidelight':'Click wall sections to add door+sidelight (36″ door + 8″ sidelight) · Right-click cycles 4 variants: sidelight left/right × swing in/out',
     'select':'Click walls/furniture to select · Delete key removes · Right-click rotates 90° · ⌥Right-click rotates 45°',
   };
   setStatus(msgs[t]||'');
